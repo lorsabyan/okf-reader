@@ -24,7 +24,7 @@ GA4 bundle, or hit **Open bundle** to load your own:
 - **Public GitHub repo** — paste `owner/repo` or a
   `github.com/…/tree/branch/subdir` URL; the bundle is fetched client-side
   through the CORS-enabled GitHub Trees API + raw.githubusercontent.com.
-  Runtime-mode HTML is sanitized with DOMPurify.
+  HTML is sanitized as part of the markdown pipeline (rehype-sanitize).
 
 ## Features
 
@@ -87,9 +87,12 @@ exactly as OKF intends.
 [GoogleCloudPlatform/knowledge-catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog)
 (Copyright Google LLC, Apache 2.0), vendored for the out-of-the-box demo.
 
-Note: the baked (SSG) mode renders its bundle without HTML sanitization —
-build only bundles you trust, as with any documentation generator. Bundles
-opened at runtime via `/open/` are always sanitized with DOMPurify.
+Note: both the baked (SSG) mode and the runtime viewer (`/open/`) sanitize
+rendered HTML via the same unified/rehype pipeline (`rehype-sanitize`, a
+GitHub-style allowlist extended for cross-link classes, heading anchor ids,
+and shiki's syntax-highlighting output) — still build only bundles you trust,
+as with any documentation generator, but there's no unsanitized SSG path
+anymore.
 
 ## Development
 

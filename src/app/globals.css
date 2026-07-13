@@ -146,4 +146,17 @@
     display: block;
     overflow-x: auto;
   }
+  /*
+   * Shiki dual-theme code blocks (SSG only — see markdown-highlight.ts):
+   * light-theme colors are baked in directly as `color`/`background-color`;
+   * dark-theme colors ride along as unused `--shiki-dark(-bg)` custom
+   * properties until the `.dark` root class is present, at which point we
+   * swap them in. No `.shiki` class is emitted by this shiki version, so
+   * we key off the presence of an inline `style` on the three elements our
+   * sanitize schema allows one on.
+   */
+  .dark :where(pre, code, span)[style] {
+    color: var(--shiki-dark, inherit) !important;
+    background-color: var(--shiki-dark-bg, transparent) !important;
+  }
 }

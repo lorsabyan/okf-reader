@@ -14,7 +14,19 @@ export interface NavItem {
   tags: string[];
 }
 
-export default function Sidebar({ groups }: { groups: { group: string; items: NavItem[] }[] }) {
+/**
+ * Filter input + grouped concept list — the sidebar's actual content,
+ * shared between the always-visible desktop `<nav>` and the mobile
+ * drawer (a shadcn `Sheet`), so there's exactly one filtering
+ * implementation and one navigation list markup.
+ */
+export function SidebarContent({
+  groups,
+  onNavigate,
+}: {
+  groups: { group: string; items: NavItem[] }[];
+  onNavigate?: () => void;
+}) {
   const [q, setQ] = useState('');
   const pathname = usePathname();
   const needle = q.trim().toLowerCase();
@@ -26,7 +38,7 @@ export default function Sidebar({ groups }: { groups: { group: string; items: Na
     c.tags.some((t) => t.toLowerCase().includes(needle));
 
   return (
-    <nav className="border-b bg-muted/30 md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] md:border-b-0 md:border-r">
+    <>
       <div className="p-4 pb-2">
         <Input
           type="search"
@@ -54,6 +66,7 @@ export default function Sidebar({ groups }: { groups: { group: string; items: Na
                     <li key={c.id}>
                       <Link
                         href={href}
+                        onClick={onNavigate}
                         className={cn(
                           'block rounded-md px-2 py-1.5 text-sm leading-snug hover:bg-accent hover:text-accent-foreground',
                           active && 'bg-accent font-medium text-accent-foreground',
@@ -69,6 +82,15 @@ export default function Sidebar({ groups }: { groups: { group: string; items: Na
           );
         })}
       </ScrollArea>
+    </>
+  );
+}
+
+/** Desktop sidebar — hidden below `md`, where a hamburger + drawer takes over (see ReaderLayout). */
+export default function Sidebar({ groups }: { groups: { group: string; items: NavItem[] }[] }) {
+  return (
+    <nav className="hidden md:sticky md:top-14 md:block md:h-[calc(100vh-3.5rem)] md:border-r md:bg-muted/30">
+      <SidebarContent groups={groups} />
     </nav>
   );
 }

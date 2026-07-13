@@ -3,9 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import TourSection from '@/components/tour/TourSection';
 import { loadBundle } from '@/lib/bundle';
 import { parseFrontmatter, getTourSummaries } from '@okf/core';
-import { renderMarkdown } from '@/lib/markdown';
+import { renderMarkdownWithHighlight } from '@/lib/markdown-highlight';
 
-export default function Home() {
+export default async function Home() {
   const bundle = loadBundle();
   const types = new Map<string, number>();
   for (const c of bundle.concepts) types.set(c.type, (types.get(c.type) ?? 0) + 1);
@@ -17,7 +17,7 @@ export default function Home() {
 
   const rootIndex = bundle.files.get('index.md');
   const indexHtml = rootIndex
-    ? renderMarkdown(parseFrontmatter(rootIndex).body, '', (id) => bundle.byId.has(id))
+    ? (await renderMarkdownWithHighlight(parseFrontmatter(rootIndex).body, '', (id) => bundle.byId.has(id))).html
     : null;
   const tours = getTourSummaries(bundle);
 

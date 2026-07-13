@@ -1,6 +1,5 @@
 'use client';
 
-import DOMPurify from 'dompurify';
 import {
   Activity,
   Check,
@@ -9,11 +8,15 @@ import {
   GitBranch,
   Link as LinkIcon,
   Loader2,
+  Menu,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import HealthView from '@/components/open/HealthView';
 import Neighborhood from '@/components/Neighborhood';
+import PageToc from '@/components/PageToc';
+import PrevNext from '@/components/PrevNext';
 import TourBar from '@/components/tour/TourBar';
 import TourSection from '@/components/tour/TourSection';
 import TourView from '@/components/tour/TourView';
@@ -23,9 +26,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { buildBundle, navGroups, parseFrontmatter, type Concept, type CoreBundle } from '@okf/core';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
+  buildBundle,
+  detectBundleRoot,
+  navGroups,
+  parseFrontmatter,
+  type Concept,
+  type CoreBundle,
+  type DetectedRoot,
+} from '@okf/core';
 import { loadHandle, saveHandle, deleteHandle, listHandleKeys } from '@/lib/idb-handles';
 import { renderMarkdown } from '@/lib/markdown';
+import { prevNextInGroup } from '@/lib/prev-next';
 import {
   deleteRecent,
   getRecents,
@@ -64,11 +83,8 @@ function useHashRoute(): string {
 }
 
 function Markdown({ bundle, body, fromId }: { bundle: CoreBundle; body: string; fromId: string }) {
-  const html = useMemo(
-    () =>
-      DOMPurify.sanitize(
-        renderMarkdown(body, fromId, (id) => bundle.byId.has(id), hashHref),
-      ),
+  const { html } = useMemo(
+    () => renderMarkdown(body, fromId, (id) => bundle.byId.has(id), hashHref),
     [bundle, body, fromId],
   );
   return (
@@ -81,12 +97,9 @@ function Markdown({ bundle, body, fromId }: { bundle: CoreBundle; body: string; 
 
 function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept }) {
   const tour = isTour(concept);
-  const introHtml = useMemo(
-    () =>
-      tour
-        ? DOMPurify.sanitize(renderMarkdown(concept.body, concept.id, (id) => bundle.byId.has(id), hashHref))
-        : '',
-    [bundle, concept, tour],
+  const rendered = useMemo(
+    () => renderMarkdown(concept.body, concept.id, (id) => bundle.byId.has(id), hashHref),
+    [bundle, concept],
   );
   const candidateTours = useMemo(
     () =>
@@ -99,6 +112,7 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
       })),
     [bundle, concept.id],
   );
+  const { prev, next } = useMemo(() => prevNextInGroup(bundle, concept.id), [bundle, concept.id]);
   const inbound = (bundle.backlinks.get(concept.id) ?? []).map((id) => bundle.byId.get(id)!);
   const outbound = concept.outLinks.map((id) => bundle.byId.get(id)!);
 
@@ -114,7 +128,7 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
           timestamp: concept.timestamp,
           tags: concept.tags,
         }}
-        introHtml={introHtml}
+        introHtml={rendered.html}
         steps={resolveTourSteps(bundle, concept)}
         hrefFor={hashHref}
       />
@@ -122,62 +136,72 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
   }
 
   return (
-    <article className="max-w-3xl">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge>{concept.type}</Badge>
-        {concept.timestamp && (
-          <time className="text-sm text-muted-foreground">{concept.timestamp.slice(0, 10)}</time>
+    <div className="flex gap-8">
+      <article className="min-w-0 max-w-3xl flex-1">
+        <Breadcrumbs id={concept.id} title={concept.title} homeHref="#/" />
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <Badge>{concept.type}</Badge>
+          {concept.timestamp && (
+            <time className="text-sm text-muted-foreground">{concept.timestamp.slice(0, 10)}</time>
+          )}
+          {concept.tags.map((t) => (
+            <Badge key={t} variant="outline">
+              {t}
+            </Badge>
+          ))}
+        </div>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight">{concept.title}</h1>
+        {concept.description && <p className="mt-2 text-lg text-muted-foreground">{concept.description}</p>}
+        {concept.resource && (
+          <p className="mt-2 break-all text-sm">
+            <a
+              href={concept.resource}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              <ExternalLink className="size-3.5 shrink-0" />
+              {concept.resource}
+            </a>
+          </p>
         )}
-        {concept.tags.map((t) => (
-          <Badge key={t} variant="outline">
-            {t}
-          </Badge>
-        ))}
-      </div>
-      <h1 className="mt-3 text-3xl font-bold tracking-tight">{concept.title}</h1>
-      {concept.description && <p className="mt-2 text-lg text-muted-foreground">{concept.description}</p>}
-      {concept.resource && (
-        <p className="mt-2 break-all text-sm">
-          <a
-            href={concept.resource}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 text-primary hover:underline"
-          >
-            <ExternalLink className="size-3.5 shrink-0" />
-            {concept.resource}
-          </a>
-        </p>
-      )}
-      <Markdown bundle={bundle} body={concept.body} fromId={concept.id} />
-      <Neighborhood
-        center={{ id: concept.id, title: concept.title }}
-        inbound={inbound.map(({ id, title }) => ({ id, title }))}
-        outbound={outbound.map(({ id, title }) => ({ id, title }))}
-        hrefFor={hashHref}
-      />
-      {inbound.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold tracking-tight">Cited by</h2>
-          <ul className="mt-3 space-y-2">
-            {inbound.map((c) => (
-              <li key={c.id} className="text-sm leading-relaxed">
-                <a href={hashHref(c.id)} className="font-medium text-primary hover:underline">
-                  {c.title}
-                </a>
-                {c.description && <span className="text-muted-foreground"> — {c.description}</span>}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      <Separator className="mt-10" />
-      <footer className="py-4 text-xs text-muted-foreground">Concept ID: {concept.id}</footer>
+        <section
+          className="prose prose-neutral mt-8 max-w-none dark:prose-invert"
+          dangerouslySetInnerHTML={{ __html: rendered.html }}
+        />
+        <Neighborhood
+          center={{ id: concept.id, title: concept.title }}
+          inbound={inbound.map(({ id, title }) => ({ id, title }))}
+          outbound={outbound.map(({ id, title }) => ({ id, title }))}
+          hrefFor={hashHref}
+        />
+        {inbound.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-xl font-semibold tracking-tight">Cited by</h2>
+            <ul className="mt-3 space-y-2">
+              {inbound.map((c) => (
+                <li key={c.id} className="text-sm leading-relaxed">
+                  <a href={hashHref(c.id)} className="font-medium text-primary hover:underline">
+                    {c.title}
+                  </a>
+                  {c.description && <span className="text-muted-foreground"> — {c.description}</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
-      {candidateTours.length > 0 && (
-        <TourBar bundleName={bundle.name} conceptId={concept.id} tours={candidateTours} hrefFor={hashHref} />
-      )}
-    </article>
+        <PrevNext prev={prev} next={next} hrefFor={hashHref} />
+
+        <Separator className="mt-10" />
+        <footer className="py-4 text-xs text-muted-foreground">Concept ID: {concept.id}</footer>
+
+        {candidateTours.length > 0 && (
+          <TourBar bundleName={bundle.name} conceptId={concept.id} tours={candidateTours} hrefFor={hashHref} />
+        )}
+      </article>
+      <PageToc headings={rendered.headings} />
+    </div>
   );
 }
 
@@ -254,24 +278,60 @@ function ShareButton() {
   );
 }
 
-function BundleShell({
+/** Dismissible notice offering to re-root the bundle at a better-resolving subdirectory. */
+function RootSuggestionBanner({
+  detected,
+  onReRoot,
+  onDismiss,
+}: {
+  detected: DetectedRoot;
+  onReRoot: () => void;
+  onDismiss: () => void;
+}) {
+  const broken = detected.rootTotal - detected.rootResolved;
+  return (
+    <div className="mx-auto max-w-screen-2xl px-4 pt-3">
+      <Card className="flex-row flex-wrap items-center justify-between gap-3 border-amber-500/40 bg-amber-500/10 px-4 py-3">
+        <p className="text-sm leading-relaxed">
+          <strong>{broken}</strong> of <strong>{detected.rootTotal}</strong> cross-links don&apos;t resolve
+          here, but would under{' '}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">{detected.prefix}/</code>.
+        </p>
+        <div className="flex shrink-0 gap-2">
+          <Button size="sm" onClick={onReRoot}>
+            Re-root to {detected.prefix}/
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDismiss}>
+            Dismiss
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+/** Filter input + grouped concept list + header actions, shared between the desktop `<nav>` and the mobile drawer. */
+function BundleNavContent({
   bundle,
+  groups,
+  route,
   shareable,
   onClose,
+  onNavigate,
 }: {
   bundle: CoreBundle;
+  groups: { group: string; items: Concept[] }[];
+  route: string;
   shareable: boolean;
   onClose: () => void;
+  onNavigate?: () => void;
 }) {
-  const route = useHashRoute();
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
-  const groups = useMemo(() => navGroups(bundle), [bundle]);
   const bodies = useMemo(
     () => new Map(bundle.concepts.map((c) => [c.id, c.body.toLowerCase()])),
     [bundle],
   );
-  const concept = route && route !== HEALTH_ROUTE ? bundle.byId.get(route) : undefined;
 
   const matchesMeta = (c: Concept) =>
     !needle ||
@@ -283,79 +343,131 @@ function BundleShell({
   const match = (c: Concept) => matchesMeta(c) || matchesBody(c);
 
   return (
-    <div className="mx-auto grid max-w-screen-2xl md:grid-cols-[300px_1fr]">
-      <nav className="border-b bg-muted/30 md:sticky md:top-14 md:h-[calc(100vh-3.5rem)] md:border-b-0 md:border-r">
-        <div className="space-y-2 p-4 pb-2">
-          <div className="flex items-center justify-between gap-2">
-            <a href="#/" className="truncate text-sm font-semibold">
-              {bundle.name}
-            </a>
-            <Button variant="outline" size="sm" onClick={onClose}>
-              Close
-            </Button>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Button variant="outline" size="sm" asChild>
-              <a href={hashHref(HEALTH_ROUTE)}>
-                <Activity className="size-3.5" />
-                Bundle health
-              </a>
-            </Button>
-            {shareable && <ShareButton />}
-          </div>
-          <Input
-            type="search"
-            placeholder="Filter concepts…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            aria-label="Filter concepts"
-            className="h-9"
-          />
+    <>
+      <div className="space-y-2 p-4 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <a href="#/" onClick={onNavigate} className="truncate text-sm font-semibold">
+            {bundle.name}
+          </a>
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Close
+          </Button>
         </div>
-        <ScrollArea className="px-4 pb-4 md:h-[calc(100%-9rem)]">
-          {groups.map(({ group, items }) => {
-            const visible = items.filter(match);
-            if (!visible.length) return null;
-            return (
-              <div key={group} className="mt-4">
-                <h3 className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {group}
-                </h3>
-                <ul className="mt-1 space-y-0.5">
-                  {visible.map((c) => (
-                    <li key={c.id}>
-                      <a
-                        href={hashHref(c.id)}
-                        className={cn(
-                          'block rounded-md px-2 py-1.5 text-sm leading-snug hover:bg-accent hover:text-accent-foreground',
-                          route === c.id && 'bg-accent font-medium text-accent-foreground',
-                        )}
-                      >
-                        {c.title}
-                        {needle && !matchesMeta(c) && matchesBody(c) && (
-                          <span className="ml-1.5 text-xs text-muted-foreground">(body match)</span>
-                        )}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </ScrollArea>
-      </nav>
-      <main className="min-w-0 px-6 py-8 md:px-12">
-        {route === HEALTH_ROUTE ? (
-          <HealthView bundle={bundle} />
-        ) : concept ? (
-          <ConceptView bundle={bundle} concept={concept} />
-        ) : route ? (
-          <p className="text-muted-foreground">No concept “{route}” in this bundle.</p>
-        ) : (
-          <HomeView bundle={bundle} />
-        )}
-      </main>
-    </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button variant="outline" size="sm" asChild>
+            <a href={hashHref(HEALTH_ROUTE)} onClick={onNavigate}>
+              <Activity className="size-3.5" />
+              Bundle health
+            </a>
+          </Button>
+          {shareable && <ShareButton />}
+        </div>
+        <Input
+          type="search"
+          placeholder="Filter concepts…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Filter concepts"
+          className="h-9"
+        />
+      </div>
+      <ScrollArea className="px-4 pb-4 md:h-[calc(100%-9rem)]">
+        {groups.map(({ group, items }) => {
+          const visible = items.filter(match);
+          if (!visible.length) return null;
+          return (
+            <div key={group} className="mt-4">
+              <h3 className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {group}
+              </h3>
+              <ul className="mt-1 space-y-0.5">
+                {visible.map((c) => (
+                  <li key={c.id}>
+                    <a
+                      href={hashHref(c.id)}
+                      onClick={onNavigate}
+                      className={cn(
+                        'block rounded-md px-2 py-1.5 text-sm leading-snug hover:bg-accent hover:text-accent-foreground',
+                        route === c.id && 'bg-accent font-medium text-accent-foreground',
+                      )}
+                    >
+                      {c.title}
+                      {needle && !matchesMeta(c) && matchesBody(c) && (
+                        <span className="ml-1.5 text-xs text-muted-foreground">(body match)</span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </ScrollArea>
+    </>
+  );
+}
+
+function BundleShell({
+  bundle,
+  shareable,
+  banner,
+  onClose,
+}: {
+  bundle: CoreBundle;
+  shareable: boolean;
+  banner?: ReactNode;
+  onClose: () => void;
+}) {
+  const route = useHashRoute();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const groups = useMemo(() => navGroups(bundle), [bundle]);
+  const concept = route && route !== HEALTH_ROUTE ? bundle.byId.get(route) : undefined;
+
+  return (
+    <>
+      {banner}
+      <div className="mx-auto grid max-w-screen-2xl md:grid-cols-[300px_1fr]">
+        <div className="flex items-center gap-2 border-b bg-muted/30 p-3 md:hidden">
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Open navigation menu">
+                <Menu className="size-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 gap-0 p-0">
+              <SheetHeader className="border-b">
+                <SheetTitle className="truncate text-sm">{bundle.name}</SheetTitle>
+              </SheetHeader>
+              <BundleNavContent
+                bundle={bundle}
+                groups={groups}
+                route={route}
+                shareable={shareable}
+                onClose={onClose}
+                onNavigate={() => setMobileNavOpen(false)}
+              />
+            </SheetContent>
+          </Sheet>
+          <a href="#/" className="truncate text-sm font-semibold">
+            {bundle.name}
+          </a>
+        </div>
+        <nav className="hidden border-b bg-muted/30 md:sticky md:top-14 md:block md:h-[calc(100vh-3.5rem)] md:border-b-0 md:border-r">
+          <BundleNavContent bundle={bundle} groups={groups} route={route} shareable={shareable} onClose={onClose} />
+        </nav>
+        <main className="min-w-0 px-6 py-8 md:px-12">
+          {route === HEALTH_ROUTE ? (
+            <HealthView bundle={bundle} />
+          ) : concept ? (
+            <ConceptView bundle={bundle} concept={concept} />
+          ) : route ? (
+            <p className="text-muted-foreground">No concept “{route}” in this bundle.</p>
+          ) : (
+            <HomeView bundle={bundle} />
+          )}
+        </main>
+      </div>
+    </>
   );
 }
 
@@ -455,6 +567,13 @@ export default function OpenViewer() {
   const [canPick, setCanPick] = useState(false);
   useEffect(() => setCanPick(supportsDirectoryPicker()), []);
 
+  // Bundle-root detection (feature set A): the raw file map as originally
+  // loaded (kept around so re-rooting never has to re-fetch), the
+  // suggestion computed from it, and whether the user dismissed it.
+  const [rawFiles, setRawFiles] = useState<Map<string, string> | null>(null);
+  const [detected, setDetected] = useState<DetectedRoot | null>(null);
+  const [detectedDismissed, setDetectedDismissed] = useState(false);
+
   const load = useCallback((files: Map<string, string>, name: string, opts?: { keepHash?: boolean }) => {
     const b = buildBundle(files, name);
     if (!b.concepts.length) {
@@ -464,8 +583,41 @@ export default function OpenViewer() {
     setError(null);
     if (!opts?.keepHash) window.location.hash = '';
     setBundle(b);
+    setRawFiles(files);
+    setDetected(detectBundleRoot(files));
+    setDetectedDismissed(false);
     return true;
   }, []);
+
+  /** Rebuild the bundle scoped to the suggested prefix, without re-fetching. */
+  const reRoot = useCallback(() => {
+    if (!rawFiles || !detected) return;
+    const prefix = detected.prefix;
+    const strip = `${prefix}/`;
+    const filtered = new Map<string, string>();
+    for (const [path, text] of rawFiles) {
+      if (path.startsWith(strip)) filtered.set(path.slice(strip.length), text);
+    }
+    const newName = prefix.split('/').pop()!;
+    const b = buildBundle(filtered, newName);
+    window.location.hash = '';
+    setBundle(b);
+    setDetected(null);
+    setDetectedDismissed(false);
+
+    if (githubRef) {
+      const newRef: GithubRef = {
+        ...githubRef,
+        subdir: githubRef.subdir ? `${githubRef.subdir}/${prefix}` : prefix,
+      };
+      setGithubRef(newRef);
+      const src = formatGithubRef(newRef);
+      setShareParam(src);
+      recordGithubRecent(src, newName);
+    } else {
+      recordLocalRecent(newName);
+    }
+  }, [rawFiles, detected, githubRef]);
 
   const loadFromGithub = useCallback(
     async (ref: GithubRef, opts?: { keepHash?: boolean }) => {
@@ -557,9 +709,21 @@ export default function OpenViewer() {
       <BundleShell
         bundle={bundle}
         shareable={!!githubRef}
+        banner={
+          detected && !detectedDismissed ? (
+            <RootSuggestionBanner
+              detected={detected}
+              onReRoot={reRoot}
+              onDismiss={() => setDetectedDismissed(true)}
+            />
+          ) : undefined
+        }
         onClose={() => {
           setBundle(null);
           setGithubRef(null);
+          setRawFiles(null);
+          setDetected(null);
+          setDetectedDismissed(false);
           window.location.hash = '';
           setShareParam(null);
         }}
