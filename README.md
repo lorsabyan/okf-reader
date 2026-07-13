@@ -9,24 +9,31 @@ local-neighborhood connection graph per concept.
 Companion to [okf-skill](https://github.com/lorsabyan/okf-skill), the agent
 skill for authoring and validating OKF bundles.
 
+Built with Next.js 16, React 19, Tailwind CSS v4, shadcn/ui, and Bun.
+
 ## Run
 
 ```sh
-npm install
-npm run dev            # http://localhost:3000, renders example-bundle/
+bun install
+bun run dev            # http://localhost:3000, renders example-bundle/
 ```
 
 Point at your own bundle:
 
 ```sh
-OKF_BUNDLE=/path/to/bundle OKF_BUNDLE_NAME="My Catalog" npm run dev
+OKF_BUNDLE=/path/to/bundle OKF_BUNDLE_NAME="My Catalog" bun run dev
 ```
 
 ## Static export
 
 ```sh
-npm run build          # writes a fully static site to out/
+bun run build          # writes a fully static site to out/
+bun test               # unit tests
+bun run typecheck
 ```
+
+For sub-path hosting (e.g. GitHub Pages), set `NEXT_BASE_PATH=/repo-name`
+at build time — see [.github/workflows/deploy.yml](.github/workflows/deploy.yml).
 
 Deploy `out/` to any static host (GitHub Pages, Cloudflare Pages, S3, nginx).
 No backend, no database — the bundle stays the source of truth in git,

@@ -1,3 +1,5 @@
+import { conceptHref } from '@/lib/paths';
+
 interface Node {
   id: string;
   title: string;
@@ -15,13 +17,20 @@ function truncate(s: string, n = 26) {
 function NodeBox({ node, x, y, center = false }: { node: Node; x: number; y: number; center?: boolean }) {
   const box = (
     <g>
-      <rect x={x} y={y} width={BOX_W} height={BOX_H} rx={8} className={center ? 'nb-center' : 'nb-node'} />
-      <text x={x + BOX_W / 2} y={y + BOX_H / 2 + 4} textAnchor="middle">
+      <rect
+        x={x}
+        y={y}
+        width={BOX_W}
+        height={BOX_H}
+        rx={8}
+        className={center ? 'fill-primary/10 stroke-primary' : 'fill-muted stroke-border hover:stroke-primary'}
+      />
+      <text x={x + BOX_W / 2} y={y + BOX_H / 2 + 4} textAnchor="middle" className="fill-foreground">
         {truncate(node.title)}
       </text>
     </g>
   );
-  return center ? box : <a href={`/c/${node.id}/`}>{box}</a>;
+  return center ? box : <a href={conceptHref(node.id)}>{box}</a>;
 }
 
 /**
@@ -37,15 +46,22 @@ export default function Neighborhood({ center, inbound, outbound }: { center: No
   const colY = (i: number, n: number) => height / 2 - (n * ROW) / 2 + i * ROW + (ROW - BOX_H) / 2;
 
   return (
-    <figure className="neighborhood">
-      <figcaption>Connections</figcaption>
-      <svg viewBox={`0 0 ${WIDTH} ${height}`} role="img" aria-label={`Concepts linked with ${center.title}`}>
+    <figure className="mt-12">
+      <figcaption className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Connections
+      </figcaption>
+      <svg
+        viewBox={`0 0 ${WIDTH} ${height}`}
+        role="img"
+        aria-label={`Concepts linked with ${center.title}`}
+        className="mt-2 h-auto w-full text-xs"
+      >
         {inbound.map((n, i) => {
           const y = colY(i, inbound.length) + BOX_H / 2;
           return (
             <path
               key={n.id}
-              className="nb-edge"
+              className="fill-none stroke-border stroke-[1.5]"
               d={`M ${10 + BOX_W} ${y} C ${cx - 60} ${y}, ${10 + BOX_W + 60} ${midY + BOX_H / 2}, ${cx} ${midY + BOX_H / 2}`}
             />
           );
@@ -55,7 +71,7 @@ export default function Neighborhood({ center, inbound, outbound }: { center: No
           return (
             <path
               key={n.id}
-              className="nb-edge"
+              className="fill-none stroke-border stroke-[1.5]"
               d={`M ${cx + BOX_W} ${midY + BOX_H / 2} C ${WIDTH - BOX_W - 70} ${midY + BOX_H / 2}, ${cx + BOX_W + 60} ${y}, ${WIDTH - BOX_W - 10} ${y}`}
             />
           );
@@ -68,7 +84,7 @@ export default function Neighborhood({ center, inbound, outbound }: { center: No
         ))}
         <NodeBox node={center} x={cx} y={midY} center />
       </svg>
-      <div className="nb-legend">
+      <div className="flex justify-between text-xs text-muted-foreground">
         <span>← cited by</span>
         <span>links to →</span>
       </div>

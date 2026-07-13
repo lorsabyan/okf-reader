@@ -1,5 +1,6 @@
 import { marked } from 'marked';
 import { resolveLink } from './bundle';
+import { conceptHref } from './paths';
 
 /**
  * Render an OKF markdown body to HTML, rewiring cross-links:
@@ -12,7 +13,7 @@ export function renderMarkdown(body: string, fromId: string, exists: (id: string
   return html.replace(/href="([^"]+?\.md)(#[^"]*)?"/g, (whole, target) => {
     if (/^[a-z][a-z0-9+.-]*:/i.test(target)) return whole; // external URL
     const id = resolveLink(target, fromId);
-    if (exists(id)) return `href="/c/${id}/"`;
+    if (exists(id)) return `href="${conceptHref(id)}"`;
     // Reserved files (index/log) have no concept page — render as plain text.
     if (id === 'index' || id.endsWith('/index') || id === 'log' || id.endsWith('/log'))
       return `href="#" class="link-plain"`;
