@@ -22,6 +22,16 @@ export function parseGithubUrl(input: string): GithubRef | null {
   return { owner: m[1], repo: m[2], branch: m[3], subdir: m[4] ?? '' };
 }
 
+/** Inverse of parseGithubUrl: "<owner>/<repo>[/tree/<branch>[/<subdir>]]" — used for shareable URLs. */
+export function formatGithubRef(ref: GithubRef): string {
+  let s = `${ref.owner}/${ref.repo}`;
+  if (ref.branch) {
+    s += `/tree/${ref.branch}`;
+    if (ref.subdir) s += `/${ref.subdir}`;
+  }
+  return s;
+}
+
 interface TreeEntry {
   path: string;
   type: string;
@@ -30,7 +40,7 @@ interface TreeEntry {
 export async function fetchGithubBundle(
   ref: GithubRef,
   onProgress?: (done: number, total: number) => void,
-): Promise<{ files: Map<string, string>; name: string }> {
+): Promise<{ files: Map<string, string>; name: string; branch: string }> {
   const api = `https://api.github.com/repos/${ref.owner}/${ref.repo}`;
   let branch = ref.branch;
   if (!branch) {
@@ -70,5 +80,5 @@ export async function fetchGithubBundle(
   await Promise.all(Array.from({ length: Math.min(8, paths.length) }, worker));
 
   const name = ref.subdir ? ref.subdir.split('/').pop()! : ref.repo;
-  return { files, name };
+  return { files, name, branch };
 }

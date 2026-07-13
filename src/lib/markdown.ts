@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import { resolveLink } from './core';
+import { isReservedTarget, resolveLink } from './core';
 import { conceptHref } from './paths';
 
 /**
@@ -21,8 +21,7 @@ export function renderMarkdown(
     const id = resolveLink(target, fromId);
     if (exists(id)) return `href="${hrefFor(id)}"`;
     // Reserved files (index/log) have no concept page — render as plain text.
-    if (id === 'index' || id.endsWith('/index') || id === 'log' || id.endsWith('/log'))
-      return `href="#" class="link-plain"`;
+    if (isReservedTarget(id)) return `href="#" class="link-plain"`;
     return `href="#" class="link-broken" title="Not yet written: ${id}"`;
   });
 }

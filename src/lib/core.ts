@@ -8,10 +8,21 @@ import { load as parseYaml } from 'js-yaml';
 export const RESERVED = new Set(['index.md', 'log.md']);
 const LINK_RE = /\]\(([^)\s]+?\.md)(?:#[^)]*)?\)/g;
 
+/** Extract raw markdown link targets (e.g. "tables/orders.md") from a concept body. */
+export function extractLinkTargets(body: string): string[] {
+  return [...body.matchAll(LINK_RE)].map((m) => m[1]);
+}
+
+/** True for reserved-file link targets (index/log) that never have a concept page. */
+export function isReservedTarget(id: string): boolean {
+  return id === 'index' || id.endsWith('/index') || id === 'log' || id.endsWith('/log');
+}
+
 export interface Concept {
   id: string; // path without .md, posix separators, e.g. "tables/events_"
   title: string;
   type: string;
+  typeExplicit: boolean; // false when frontmatter had no `type` and it was defaulted
   description: string;
   resource?: string;
   tags: string[];
@@ -79,6 +90,7 @@ export function buildBundle(files: Map<string, string>, name: string): CoreBundl
       id,
       title: typeof data.title === 'string' ? data.title : id.split('/').pop()!,
       type: typeof data.type === 'string' ? data.type : 'Concept',
+      typeExplicit: typeof data.type === 'string',
       description: typeof data.description === 'string' ? data.description : '',
       resource: typeof data.resource === 'string' ? data.resource : undefined,
       tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
@@ -92,8 +104,8 @@ export function buildBundle(files: Map<string, string>, name: string): CoreBundl
   const backlinks = new Map<string, string[]>();
   for (const c of concepts) {
     const seen = new Set<string>();
-    for (const m of c.body.matchAll(LINK_RE)) {
-      const target = resolveLink(m[1], c.id);
+    for (const raw of extractLinkTargets(c.body)) {
+      const target = resolveLink(raw, c.id);
       if (target !== c.id && byId.has(target) && !seen.has(target)) {
         seen.add(target);
         c.outLinks.push(target);

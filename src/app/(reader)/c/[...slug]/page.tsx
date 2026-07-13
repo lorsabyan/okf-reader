@@ -24,7 +24,7 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
   const outbound = concept.outLinks.map((id) => bundle.byId.get(id)!);
 
   return (
-    <article className="max-w-3xl">
+    <article className="max-w-3xl" data-pagefind-body data-pagefind-meta={`type:${concept.type}`}>
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge>{concept.type}</Badge>
         {concept.timestamp && (

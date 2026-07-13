@@ -30,6 +30,7 @@ jobs:
         env:
           OKF_BUNDLE_NAME: GA4 e-commerce (demo)
           NEXT_BASE_PATH: /okf-reader
+          NEXT_PUBLIC_BASE_PATH: /okf-reader
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
