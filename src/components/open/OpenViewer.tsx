@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { buildBundle, navGroups, parseFrontmatter, type Concept, type CoreBundle } from '@/lib/core';
+import { buildBundle, navGroups, parseFrontmatter, type Concept, type CoreBundle } from '@okf/core';
 import { loadHandle, saveHandle, deleteHandle, listHandleKeys } from '@/lib/idb-handles';
 import { renderMarkdown } from '@/lib/markdown';
 import {
@@ -38,7 +38,7 @@ import {
 } from '@/lib/recents';
 import { fetchGithubBundle, formatGithubRef, parseGithubUrl, type GithubRef } from '@/lib/sources/github';
 import { pickDirectory, readFileList, reopenDirectory, supportsDirectoryPicker, type DirHandle } from '@/lib/sources/local';
-import { getTourSummaries, isTour, resolveTourSteps, toursForStep } from '@/lib/tours';
+import { getTourSummaries, isTour, resolveTourSteps, toursForStep } from '@okf/core';
 import { cn } from '@/lib/utils';
 
 const hashHref = (id: string) => `#/${id}`;

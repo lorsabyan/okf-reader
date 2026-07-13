@@ -1,4 +1,4 @@
-import { extractLinkTargets, isReservedTarget, resolveLink, type CoreBundle } from './core';
+import { extractLinkTargets, isReservedTarget, resolveLink, type CoreBundle } from './core.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const STALE_AFTER_MS = 365 * DAY_MS;

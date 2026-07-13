@@ -2,8 +2,7 @@
 
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { analyzeBundle } from '@/lib/health';
-import type { CoreBundle } from '@/lib/core';
+import { analyzeBundle, type CoreBundle } from '@okf/core';
 
 function ConceptLink({ bundle, id }: { bundle: CoreBundle; id: string }) {
   const concept = bundle.byId.get(id);

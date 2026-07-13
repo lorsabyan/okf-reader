@@ -1,4 +1,4 @@
-import type { Concept, CoreBundle } from './core';
+import type { Concept, CoreBundle } from './core.ts';
 
 /**
  * Guided tours: an ordinary OKF concept doc whose frontmatter has

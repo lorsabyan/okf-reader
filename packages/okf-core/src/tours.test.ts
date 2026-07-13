@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { buildBundle } from './core';
+import { buildBundle } from './core.ts';
 import {
   firstUnvisitedStep,
   getTourSummaries,
@@ -12,7 +12,7 @@ import {
   toursForStep,
   tourButtonLabel,
   tourProgressKey,
-} from './tours';
+} from './tours.ts';
 
 const files = new Map([
   [

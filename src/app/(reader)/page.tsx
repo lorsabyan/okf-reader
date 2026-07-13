@@ -2,9 +2,8 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import TourSection from '@/components/tour/TourSection';
 import { loadBundle } from '@/lib/bundle';
-import { parseFrontmatter } from '@/lib/core';
+import { parseFrontmatter, getTourSummaries } from '@okf/core';
 import { renderMarkdown } from '@/lib/markdown';
-import { getTourSummaries } from '@/lib/tours';
 
 export default function Home() {
   const bundle = loadBundle();

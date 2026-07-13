@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { conceptHref } from '@/lib/paths';
 import { getActiveTour, markStepVisited, setActiveTour } from '@/lib/tour-progress';
-import { tourProgressKey } from '@/lib/tours';
+import { tourProgressKey } from '@okf/core';
 
 export interface TourBarStep {
   id: string;

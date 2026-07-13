@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { conceptHref } from '@/lib/paths';
 import { getTourProgress, setActiveTour } from '@/lib/tour-progress';
-import { firstUnvisitedStep, tourButtonLabel, tourProgressKey, type TourStepInfo } from '@/lib/tours';
+import { firstUnvisitedStep, tourButtonLabel, tourProgressKey, type TourStepInfo } from '@okf/core';
 
 export interface TourViewTour {
   id: string;

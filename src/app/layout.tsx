@@ -11,8 +11,17 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://lorsabyan.github.io/okf-reader/'),
   title: 'OKF Reader',
   description: 'Read, navigate, and explore Open Knowledge Format bundles.',
+  openGraph: {
+    title: 'OKF Reader',
+    description: 'Read, navigate, and explore Open Knowledge Format bundles.',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

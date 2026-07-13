@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildBundle, type CoreBundle } from './core';
+import { buildBundle, type CoreBundle } from '@okf/core';
 
-export { navGroups, resolveLink, type Concept } from './core';
+export { navGroups, resolveLink, type Concept } from '@okf/core';
 export type Bundle = CoreBundle & { dir: string };
 
 function walk(dir: string, root: string, acc: Map<string, string>): Map<string, string> {

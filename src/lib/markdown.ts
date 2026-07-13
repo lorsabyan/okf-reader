@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import { isReservedTarget, resolveLink } from './core';
+import { isReservedTarget, resolveLink } from '@okf/core';
 import { conceptHref } from './paths';
 
 /**

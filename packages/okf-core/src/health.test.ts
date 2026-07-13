@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { buildBundle } from './core';
-import { analyzeBundle } from './health';
+import { buildBundle } from './core.ts';
+import { analyzeBundle } from './health.ts';
 
 describe('analyzeBundle', () => {
   const files = new Map([

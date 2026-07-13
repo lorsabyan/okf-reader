@@ -1,4 +1,4 @@
-import type { TourSummary } from '@/lib/tours';
+import type { TourSummary } from '@okf/core';
 import TourCard from './TourCard';
 
 /**

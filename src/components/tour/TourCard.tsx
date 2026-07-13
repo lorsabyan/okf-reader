@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { conceptHref } from '@/lib/paths';
 import { getTourProgress, setActiveTour } from '@/lib/tour-progress';
-import { firstUnvisitedStep, tourButtonLabel, tourProgressKey, type TourSummary } from '@/lib/tours';
+import { firstUnvisitedStep, tourButtonLabel, tourProgressKey, type TourSummary } from '@okf/core';
 
 /**
  * A single tour's card: title, description, step count, progress, and a

@@ -8,7 +8,7 @@ import { renderMarkdown } from '@/lib/markdown';
 import Neighborhood from '@/components/Neighborhood';
 import TourBar from '@/components/tour/TourBar';
 import TourView from '@/components/tour/TourView';
-import { isTour, resolveTourSteps, toursForStep } from '@/lib/tours';
+import { isTour, resolveTourSteps, toursForStep } from '@okf/core';
 
 export const dynamicParams = false;
 
