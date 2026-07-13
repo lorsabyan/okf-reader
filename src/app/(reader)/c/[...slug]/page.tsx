@@ -6,6 +6,9 @@ import { Separator } from '@/components/ui/separator';
 import { loadBundle } from '@/lib/bundle';
 import { renderMarkdown } from '@/lib/markdown';
 import Neighborhood from '@/components/Neighborhood';
+import TourBar from '@/components/tour/TourBar';
+import TourView from '@/components/tour/TourView';
+import { isTour, resolveTourSteps, toursForStep } from '@/lib/tours';
 
 export const dynamicParams = false;
 
@@ -22,6 +25,32 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
   const html = renderMarkdown(concept.body, concept.id, (id) => bundle.byId.has(id));
   const inbound = (bundle.backlinks.get(concept.id) ?? []).map((id) => bundle.byId.get(id)!);
   const outbound = concept.outLinks.map((id) => bundle.byId.get(id)!);
+
+  if (isTour(concept)) {
+    return (
+      <TourView
+        bundleName={bundle.name}
+        tour={{
+          id: concept.id,
+          title: concept.title,
+          type: concept.type,
+          description: concept.description,
+          timestamp: concept.timestamp,
+          tags: concept.tags,
+        }}
+        introHtml={html}
+        steps={resolveTourSteps(bundle, concept)}
+      />
+    );
+  }
+
+  const candidateTours = toursForStep(bundle, concept.id).map((t) => ({
+    id: t.id,
+    title: t.title,
+    steps: resolveTourSteps(bundle, t)
+      .filter((s) => s.exists)
+      .map(({ id, title }) => ({ id, title })),
+  }));
 
   return (
     <article className="max-w-3xl" data-pagefind-body data-pagefind-meta={`type:${concept.type}`}>
@@ -81,6 +110,10 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
 
       <Separator className="mt-10" />
       <footer className="py-4 text-xs text-muted-foreground">Concept ID: {concept.id}</footer>
+
+      {candidateTours.length > 0 && (
+        <TourBar bundleName={bundle.name} conceptId={concept.id} tours={candidateTours} />
+      )}
     </article>
   );
 }

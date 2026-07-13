@@ -4,10 +4,13 @@
  */
 
 /** TS's dom lib doesn't ship the async-iterable parts of the FS Access API yet. */
-interface DirHandle {
+export interface DirHandle {
   readonly kind: 'directory';
   readonly name: string;
   entries(): AsyncIterableIterator<[string, DirHandle | FileHandle]>;
+  /** Chromium-only permissions extension, also missing from TS's dom lib. */
+  queryPermission?(opts: { mode: 'read' | 'readwrite' }): Promise<'granted' | 'denied' | 'prompt'>;
+  requestPermission?(opts: { mode: 'read' | 'readwrite' }): Promise<'granted' | 'denied' | 'prompt'>;
 }
 interface FileHandle {
   readonly kind: 'file';
@@ -23,7 +26,7 @@ export function supportsDirectoryPicker(): boolean {
 }
 
 /** File System Access API (Chromium): live handle, recursive read. */
-export async function pickDirectory(): Promise<{ files: Map<string, string>; name: string } | null> {
+export async function pickDirectory(): Promise<{ files: Map<string, string>; name: string; handle: DirHandle } | null> {
   const picker = (window as DirectoryPickerWindow).showDirectoryPicker;
   if (!picker) return null;
   let handle: DirHandle;
@@ -34,10 +37,10 @@ export async function pickDirectory(): Promise<{ files: Map<string, string>; nam
   }
   const files = new Map<string, string>();
   await readHandle(handle, '', files);
-  return { files, name: handle.name };
+  return { files, name: handle.name, handle };
 }
 
-async function readHandle(dir: DirHandle, prefix: string, acc: Map<string, string>) {
+export async function readHandle(dir: DirHandle, prefix: string, acc: Map<string, string>) {
   for await (const [name, entry] of dir.entries()) {
     if (name.startsWith('.')) continue;
     const path = prefix ? `${prefix}/${name}` : name;
@@ -47,6 +50,26 @@ async function readHandle(dir: DirHandle, prefix: string, acc: Map<string, strin
       acc.set(path, await (await entry.getFile()).text());
     }
   }
+}
+
+/**
+ * Re-read a previously-picked directory handle (from a "recent bundle"),
+ * requesting read permission again if the browser needs it re-confirmed.
+ * Returns 'denied' if the user declines, otherwise the fresh file snapshot.
+ */
+export async function reopenDirectory(
+  handle: DirHandle,
+): Promise<{ files: Map<string, string>; name: string } | 'denied'> {
+  if (handle.queryPermission) {
+    let state = await handle.queryPermission({ mode: 'read' });
+    if (state !== 'granted' && handle.requestPermission) {
+      state = await handle.requestPermission({ mode: 'read' });
+    }
+    if (state !== 'granted') return 'denied';
+  }
+  const files = new Map<string, string>();
+  await readHandle(handle, '', files);
+  return { files, name: handle.name };
 }
 
 /** <input type="file" webkitdirectory> fallback (all browsers): one-shot snapshot. */

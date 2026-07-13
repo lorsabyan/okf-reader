@@ -29,6 +29,7 @@ export interface Concept {
   timestamp?: string;
   body: string;
   outLinks: string[]; // concept ids this doc links to (existing only)
+  steps?: string[]; // ordered concept ids, present for tour concepts (frontmatter `steps`)
 }
 
 export interface CoreBundle {
@@ -97,6 +98,7 @@ export function buildBundle(files: Map<string, string>, name: string): CoreBundl
       timestamp: data.timestamp != null ? String(data.timestamp) : undefined,
       body,
       outLinks: [],
+      steps: Array.isArray(data.steps) ? data.steps.map(String) : undefined,
     });
   }
 

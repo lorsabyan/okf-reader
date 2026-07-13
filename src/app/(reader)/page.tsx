@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import TourSection from '@/components/tour/TourSection';
 import { loadBundle } from '@/lib/bundle';
 import { parseFrontmatter } from '@/lib/core';
 import { renderMarkdown } from '@/lib/markdown';
+import { getTourSummaries } from '@/lib/tours';
 
 export default function Home() {
   const bundle = loadBundle();
@@ -18,6 +20,7 @@ export default function Home() {
   const indexHtml = rootIndex
     ? renderMarkdown(parseFrontmatter(rootIndex).body, '', (id) => bundle.byId.has(id))
     : null;
+  const tours = getTourSummaries(bundle);
 
   return (
     <article className="max-w-3xl">
@@ -36,6 +39,8 @@ export default function Home() {
             </Badge>
           ))}
       </div>
+
+      <TourSection bundleName={bundle.name} tours={tours} />
 
       {indexHtml && (
         <section

@@ -50,6 +50,27 @@ describe('buildBundle', () => {
   });
 });
 
+describe('buildBundle steps frontmatter', () => {
+  const files = new Map([
+    [
+      'tours/basics.md',
+      '---\ntype: Tour\nsteps:\n  - tables/orders\n  - tables/customers\n---\nIntro.',
+    ],
+    ['tables/orders.md', '---\ntype: Table\n---\nOrders.'],
+    ['tables/customers.md', '---\ntype: Table\n---\nCustomers.'],
+    ['tables/untouched.md', '---\ntype: Table\n---\nNo steps here.'],
+  ]);
+  const bundle = buildBundle(files, 'test');
+
+  test('parses a steps array into string ids', () => {
+    expect(bundle.byId.get('tours/basics')!.steps).toEqual(['tables/orders', 'tables/customers']);
+  });
+
+  test('leaves steps undefined when frontmatter has none', () => {
+    expect(bundle.byId.get('tables/untouched')!.steps).toBeUndefined();
+  });
+});
+
 describe('parseGithubUrl', () => {
   test('owner/repo shorthand', () => {
     expect(parseGithubUrl('lorsabyan/okf-skill')).toEqual({

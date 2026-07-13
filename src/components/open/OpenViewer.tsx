@@ -1,10 +1,22 @@
 'use client';
 
 import DOMPurify from 'dompurify';
-import { Activity, Check, ExternalLink, FolderOpen, GitBranch, Link as LinkIcon, Loader2 } from 'lucide-react';
+import {
+  Activity,
+  Check,
+  ExternalLink,
+  FolderOpen,
+  GitBranch,
+  Link as LinkIcon,
+  Loader2,
+  X,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import HealthView from '@/components/open/HealthView';
 import Neighborhood from '@/components/Neighborhood';
+import TourBar from '@/components/tour/TourBar';
+import TourSection from '@/components/tour/TourSection';
+import TourView from '@/components/tour/TourView';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +24,21 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { buildBundle, navGroups, parseFrontmatter, type Concept, type CoreBundle } from '@/lib/core';
+import { loadHandle, saveHandle, deleteHandle, listHandleKeys } from '@/lib/idb-handles';
 import { renderMarkdown } from '@/lib/markdown';
+import {
+  deleteRecent,
+  getRecents,
+  recordGithubRecent,
+  recordLocalRecent,
+  relativeTime,
+  type GithubRecentEntry,
+  type LocalRecentEntry,
+  type RecentEntry,
+} from '@/lib/recents';
 import { fetchGithubBundle, formatGithubRef, parseGithubUrl, type GithubRef } from '@/lib/sources/github';
-import { pickDirectory, readFileList, supportsDirectoryPicker } from '@/lib/sources/local';
+import { pickDirectory, readFileList, reopenDirectory, supportsDirectoryPicker, type DirHandle } from '@/lib/sources/local';
+import { getTourSummaries, isTour, resolveTourSteps, toursForStep } from '@/lib/tours';
 import { cn } from '@/lib/utils';
 
 const hashHref = (id: string) => `#/${id}`;
@@ -56,8 +80,47 @@ function Markdown({ bundle, body, fromId }: { bundle: CoreBundle; body: string; 
 }
 
 function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept }) {
+  const tour = isTour(concept);
+  const introHtml = useMemo(
+    () =>
+      tour
+        ? DOMPurify.sanitize(renderMarkdown(concept.body, concept.id, (id) => bundle.byId.has(id), hashHref))
+        : '',
+    [bundle, concept, tour],
+  );
+  const candidateTours = useMemo(
+    () =>
+      toursForStep(bundle, concept.id).map((t) => ({
+        id: t.id,
+        title: t.title,
+        steps: resolveTourSteps(bundle, t)
+          .filter((s) => s.exists)
+          .map(({ id, title }) => ({ id, title })),
+      })),
+    [bundle, concept.id],
+  );
   const inbound = (bundle.backlinks.get(concept.id) ?? []).map((id) => bundle.byId.get(id)!);
   const outbound = concept.outLinks.map((id) => bundle.byId.get(id)!);
+
+  if (tour) {
+    return (
+      <TourView
+        bundleName={bundle.name}
+        tour={{
+          id: concept.id,
+          title: concept.title,
+          type: concept.type,
+          description: concept.description,
+          timestamp: concept.timestamp,
+          tags: concept.tags,
+        }}
+        introHtml={introHtml}
+        steps={resolveTourSteps(bundle, concept)}
+        hrefFor={hashHref}
+      />
+    );
+  }
+
   return (
     <article className="max-w-3xl">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -110,6 +173,10 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
       )}
       <Separator className="mt-10" />
       <footer className="py-4 text-xs text-muted-foreground">Concept ID: {concept.id}</footer>
+
+      {candidateTours.length > 0 && (
+        <TourBar bundleName={bundle.name} conceptId={concept.id} tours={candidateTours} hrefFor={hashHref} />
+      )}
     </article>
   );
 }
@@ -118,6 +185,15 @@ function HomeView({ bundle }: { bundle: CoreBundle }) {
   const types = new Map<string, number>();
   for (const c of bundle.concepts) types.set(c.type, (types.get(c.type) ?? 0) + 1);
   const rootIndex = bundle.files.get('index.md');
+  const tours = useMemo(() => getTourSummaries(bundle), [bundle]);
+  const recent = useMemo(
+    () =>
+      bundle.concepts
+        .filter((c) => c.timestamp)
+        .sort((a, b) => (b.timestamp! < a.timestamp! ? -1 : 1))
+        .slice(0, 8),
+    [bundle],
+  );
   return (
     <article className="max-w-3xl">
       <h1 className="text-3xl font-bold tracking-tight">{bundle.name}</h1>
@@ -134,7 +210,27 @@ function HomeView({ bundle }: { bundle: CoreBundle }) {
             </Badge>
           ))}
       </div>
+
+      <TourSection bundleName={bundle.name} tours={tours} hrefFor={hashHref} />
+
       {rootIndex && <Markdown bundle={bundle} body={parseFrontmatter(rootIndex).body} fromId="" />}
+
+      {recent.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold tracking-tight">Recently updated</h2>
+          <ul className="mt-3 space-y-2">
+            {recent.map((c) => (
+              <li key={c.id} className="text-sm leading-relaxed">
+                <a href={hashHref(c.id)} className="font-medium text-primary hover:underline">
+                  {c.title}
+                </a>
+                <span className="text-muted-foreground"> — {c.description || c.type}</span>{' '}
+                <time className="text-muted-foreground">({c.timestamp!.slice(0, 10)})</time>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </article>
   );
 }
@@ -263,6 +359,92 @@ function BundleShell({
   );
 }
 
+/** Match predicate for a recent entry, used both to find and to delete it. */
+function sameRecent(a: RecentEntry) {
+  return (b: RecentEntry) => (a.kind === 'github' ? b.kind === 'github' && b.src === a.src : b.kind === 'local' && b.name === a.name);
+}
+
+/** "Recent" list below the two open-a-bundle cards on the /open landing page. */
+function RecentsSection({
+  busy,
+  onOpenGithub,
+  onOpenLocal,
+}: {
+  busy: boolean;
+  onOpenGithub: (entry: GithubRecentEntry) => void;
+  onOpenLocal: (entry: LocalRecentEntry, handle: DirHandle) => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  const [recents, setRecents] = useState<RecentEntry[]>([]);
+  const [handleNames, setHandleNames] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setMounted(true);
+    setRecents(getRecents());
+    listHandleKeys()
+      .then((keys) => setHandleNames(new Set(keys)))
+      .catch(() => setHandleNames(new Set()));
+  }, []);
+
+  if (!mounted || recents.length === 0) return null;
+
+  const remove = (entry: RecentEntry) => {
+    setRecents(deleteRecent(sameRecent(entry)));
+    if (entry.kind === 'local') deleteHandle(entry.name).catch(() => {});
+  };
+
+  const open = async (entry: RecentEntry) => {
+    if (entry.kind === 'github') {
+      onOpenGithub(entry);
+      return;
+    }
+    const handle = await loadHandle(entry.name);
+    if (handle) onOpenLocal(entry, handle);
+  };
+
+  return (
+    <section className="mt-10">
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Recent</h2>
+      <ul className="mt-3 space-y-1">
+        {recents.map((entry) => {
+          const Icon = entry.kind === 'github' ? GitBranch : FolderOpen;
+          const canOpen = entry.kind === 'github' || handleNames.has(entry.name);
+          const key = entry.kind === 'github' ? `github:${entry.src}` : `local:${entry.name}`;
+          return (
+            <li key={key} className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50">
+              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+              <button
+                type="button"
+                disabled={!canOpen || busy}
+                title={canOpen ? undefined : 're-select the folder to reopen'}
+                onClick={() => open(entry)}
+                className={cn(
+                  'min-w-0 flex-1 truncate text-left text-sm',
+                  canOpen ? 'text-foreground hover:underline' : 'cursor-not-allowed text-muted-foreground',
+                )}
+              >
+                {entry.name}
+                {entry.kind === 'github' && (
+                  <span className="ml-1.5 text-xs text-muted-foreground">({entry.src})</span>
+                )}
+              </button>
+              <span className="shrink-0 text-xs text-muted-foreground">{relativeTime(entry.openedAt)}</span>
+              <button
+                type="button"
+                aria-label={`Remove ${entry.name} from recents`}
+                onClick={() => remove(entry)}
+                className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 export default function OpenViewer() {
   const [bundle, setBundle] = useState<CoreBundle | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -277,11 +459,12 @@ export default function OpenViewer() {
     const b = buildBundle(files, name);
     if (!b.concepts.length) {
       setError('No OKF concept documents found (markdown files with frontmatter).');
-      return;
+      return false;
     }
     setError(null);
     if (!opts?.keepHash) window.location.hash = '';
     setBundle(b);
+    return true;
   }, []);
 
   const loadFromGithub = useCallback(
@@ -293,9 +476,11 @@ export default function OpenViewer() {
           setBusy(`Fetching from GitHub… ${done}/${total}`),
         );
         const resolvedRef: GithubRef = { ...ref, branch };
-        load(files, name, opts);
+        const ok = load(files, name, opts);
         setGithubRef(resolvedRef);
-        setShareParam(formatGithubRef(resolvedRef));
+        const src = formatGithubRef(resolvedRef);
+        setShareParam(src);
+        if (ok) recordGithubRecent(src, name);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -320,7 +505,10 @@ export default function OpenViewer() {
       if (result) {
         setGithubRef(null);
         setShareParam(null);
-        load(result.files, result.name);
+        if (load(result.files, result.name)) {
+          recordLocalRecent(result.name);
+          saveHandle(result.name, result.handle).catch(() => {});
+        }
       }
     } else {
       fileInput.current?.click();
@@ -334,6 +522,34 @@ export default function OpenViewer() {
       return;
     }
     loadFromGithub(ref);
+  };
+
+  const openGithubRecent = (entry: GithubRecentEntry) => {
+    const ref = parseGithubUrl(entry.src);
+    if (!ref) {
+      setError('Could not reopen that GitHub bundle.');
+      return;
+    }
+    loadFromGithub(ref);
+  };
+
+  const openLocalRecent = async (entry: LocalRecentEntry, handle: DirHandle) => {
+    setBusy('Reopening folder…');
+    setError(null);
+    try {
+      const result = await reopenDirectory(handle);
+      if (result === 'denied') {
+        setError(`Permission to read "${entry.name}" was denied.`);
+        return;
+      }
+      setGithubRef(null);
+      setShareParam(null);
+      if (load(result.files, result.name)) recordLocalRecent(result.name);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
   };
 
   if (bundle) {
@@ -385,7 +601,7 @@ export default function OpenViewer() {
                   const { files, name } = await readFileList(e.target.files);
                   setGithubRef(null);
                   setShareParam(null);
-                  load(files, name);
+                  if (load(files, name)) recordLocalRecent(name);
                 }
               }}
             />
@@ -418,6 +634,8 @@ export default function OpenViewer() {
         </p>
       )}
       {error && <p className="mt-6 text-sm text-destructive">{error}</p>}
+
+      <RecentsSection busy={!!busy} onOpenGithub={openGithubRecent} onOpenLocal={openLocalRecent} />
     </div>
   );
 }
