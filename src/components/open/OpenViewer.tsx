@@ -9,6 +9,7 @@ import {
   Link as LinkIcon,
   Loader2,
   Menu,
+  Search,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -17,6 +18,7 @@ import HealthView from '@/components/open/HealthView';
 import Neighborhood from '@/components/Neighborhood';
 import PageToc from '@/components/PageToc';
 import PrevNext from '@/components/PrevNext';
+import SearchCommand, { type Hit } from '@/components/search/SearchCommand';
 import TourBar from '@/components/tour/TourBar';
 import TourSection from '@/components/tour/TourSection';
 import TourView from '@/components/tour/TourView';
@@ -46,6 +48,7 @@ import { loadHandle, saveHandle, deleteHandle, listHandleKeys } from '@/lib/idb-
 import { renderMarkdown } from '@/lib/markdown';
 import { prevNextInGroup } from '@/lib/prev-next';
 import { PROSE_CLASS } from '@/lib/prose';
+import { searchBundle } from '@/lib/search-bundle';
 import {
   deleteRecent,
   getRecents,
@@ -311,6 +314,7 @@ function BundleNavContent({
   shareable,
   onClose,
   onNavigate,
+  onOpenSearch,
 }: {
   bundle: CoreBundle;
   groups: { group: string; items: Concept[] }[];
@@ -318,6 +322,7 @@ function BundleNavContent({
   shareable: boolean;
   onClose: () => void;
   onNavigate?: () => void;
+  onOpenSearch: () => void;
 }) {
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
@@ -352,6 +357,13 @@ function BundleNavContent({
               <Activity className="size-3.5" />
               Bundle health
             </a>
+          </Button>
+          <Button variant="outline" size="sm" onClick={onOpenSearch}>
+            <Search className="size-3.5" />
+            Search
+            <kbd className="ml-0.5 hidden rounded border bg-muted px-1 py-0.5 text-[10px] font-medium sm:inline-block">
+              ⌘K
+            </kbd>
           </Button>
           {shareable && <ShareButton />}
         </div>
@@ -413,12 +425,48 @@ function BundleShell({
 }) {
   const route = useHashRoute();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const groups = useMemo(() => navGroups(bundle), [bundle]);
   const concept = route && route !== HEALTH_ROUTE ? bundle.byId.get(route) : undefined;
+
+  // Recomputed only when the bundle itself changes — cheap (scored scan at
+  // bundle scale), and keeps the debounce effect in SearchCommand stable
+  // across re-renders that don't swap the bundle.
+  const searchProvider = useMemo(() => {
+    return async (query: string): Promise<Hit[]> =>
+      searchBundle(bundle, query).map((hit) => ({
+        href: hashHref(hit.id),
+        title: hit.title,
+        excerptHtml: hit.excerptHtml,
+      }));
+  }, [bundle]);
+
+  const handleSearchSelect = useCallback((hit: Hit) => {
+    window.location.hash = hit.href;
+    setMobileNavOpen(false);
+  }, []);
+
+  const openSearch = useCallback(() => setSearchOpen(true), []);
 
   return (
     <>
       {banner}
+      {/*
+        A single SearchCommand instance for the whole shell: BundleNavContent
+        renders a *trigger button* in two places (desktop nav + mobile
+        drawer), but Radix keeps both mounted while the drawer is open, so
+        the dialog/⌘K-listener/debounce state itself must live exactly once
+        here rather than inside BundleNavContent.
+      */}
+      <SearchCommand
+        provider={searchProvider}
+        onSelect={handleSearchSelect}
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        placeholder="Search this bundle…"
+        dialogDescription={`Search ${bundle.name}`}
+        renderTrigger={() => null}
+      />
       <div className="mx-auto grid max-w-screen-2xl md:grid-cols-[300px_1fr]">
         <div className="flex items-center gap-2 border-b bg-muted/30 p-3 md:hidden">
           <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -438,6 +486,7 @@ function BundleShell({
                 shareable={shareable}
                 onClose={onClose}
                 onNavigate={() => setMobileNavOpen(false)}
+                onOpenSearch={openSearch}
               />
             </SheetContent>
           </Sheet>
@@ -446,7 +495,14 @@ function BundleShell({
           </a>
         </div>
         <nav className="hidden border-b bg-muted/30 md:sticky md:top-14 md:block md:h-[calc(100vh-3.5rem)] md:border-b-0 md:border-r">
-          <BundleNavContent bundle={bundle} groups={groups} route={route} shareable={shareable} onClose={onClose} />
+          <BundleNavContent
+            bundle={bundle}
+            groups={groups}
+            route={route}
+            shareable={shareable}
+            onClose={onClose}
+            onOpenSearch={openSearch}
+          />
         </nav>
         <main className="min-w-0 px-6 py-8 md:px-12">
           {route === HEALTH_ROUTE ? (

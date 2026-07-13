@@ -77,3 +77,25 @@ test('search finds and navigates to a concept via the pagefind index', async ({ 
 
   await expect(page).toHaveURL(/\/c\/references\/metrics\/avg_pageviews\/$/);
 });
+
+test('runtime viewer: search an opened bundle and navigate to a concept via ⌘K', async ({ page }) => {
+  await page.goto('/open/');
+
+  await page.setInputFiles('input[type="file"]', 'example-bundle');
+  await expect(page.getByRole('heading', { level: 1, name: 'example-bundle' })).toBeVisible();
+
+  await page.keyboard.press('Control+k');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+
+  await page.getByPlaceholder('Search this bundle…').fill('pageviews');
+
+  // Other results' excerpts can also mention the phrase (e.g. a citing concept's
+  // body) — pick the hit whose target href is the Average Pageviews concept itself.
+  const result = page.locator('[data-slot="command-item"][data-value="#/references/metrics/avg_pageviews"]');
+  await expect(result).toBeVisible();
+  await expect(result).toContainText('Average Pageviews');
+  await result.click();
+
+  await expect.poll(() => page.evaluate(() => window.location.hash)).toBe('#/references/metrics/avg_pageviews');
+});

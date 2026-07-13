@@ -1,16 +1,6 @@
 'use client';
 
-import { Search } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import {
-  Command,
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import SearchCommand, { type Hit } from '@/components/search/SearchCommand';
 
 interface PagefindResultData {
   url: string;
@@ -38,102 +28,18 @@ function loadPagefind(): Promise<PagefindApi> {
   return pagefindPromise;
 }
 
-interface Hit {
-  url: string;
-  title: string;
-  excerpt: string;
+async function pagefindProvider(query: string): Promise<Hit[]> {
+  const pagefind = await loadPagefind();
+  const { results } = await pagefind.search(query);
+  const top = await Promise.all(results.slice(0, 8).map((r) => r.data()));
+  return top.map((d) => ({ href: d.url, title: d.meta.title ?? d.url, excerptHtml: d.excerpt }));
 }
 
 export default function SearchDialog() {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [hits, setHits] = useState<Hit[]>([]);
-  // cmdk doesn't auto-select when items arrive asynchronously — track selection
-  // ourselves and point it at the top hit so Enter always works.
-  const [selected, setSelected] = useState('');
-  const [unavailable, setUnavailable] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setOpen((o) => !o);
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
-
-  useEffect(() => {
-    if (!open || !query.trim()) {
-      setHits([]);
-      return;
-    }
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const pagefind = await loadPagefind();
-        const { results } = await pagefind.search(query);
-        const top = await Promise.all(results.slice(0, 8).map((r) => r.data()));
-        setUnavailable(false);
-        const mapped = top.map((d) => ({ url: d.url, title: d.meta.title ?? d.url, excerpt: d.excerpt }));
-        setHits(mapped);
-        setSelected(mapped[0]?.url ?? '');
-      } catch {
-        setUnavailable(true);
-        setHits([]);
-      }
-    }, 150);
-    return () => clearTimeout(debounceRef.current);
-  }, [query, open]);
-
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-      >
-        <Search className="size-4" />
-        <span className="hidden sm:inline">Search</span>
-        <kbd className="hidden rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium sm:inline-block">⌘K</kbd>
-      </button>
-      <CommandDialog open={open} onOpenChange={setOpen} title="Search" description="Search this bundle">
-        <Command shouldFilter={false} value={selected} onValueChange={setSelected}>
-          <CommandInput placeholder="Search concepts…" value={query} onValueChange={setQuery} />
-          <CommandList>
-            {unavailable && (
-              <CommandEmpty>Search index is built at build time — run bun run build</CommandEmpty>
-            )}
-            {!unavailable && hits.length === 0 && (
-              <CommandEmpty>{query.trim() ? 'No results.' : 'Type to search…'}</CommandEmpty>
-            )}
-            {hits.length > 0 && (
-              <CommandGroup heading="Results">
-                {hits.map((hit) => (
-                  <CommandItem
-                    key={hit.url}
-                    value={hit.url}
-                    onSelect={() => {
-                      setOpen(false);
-                      window.location.href = hit.url;
-                    }}
-                  >
-                    <div className="flex min-w-0 flex-col gap-0.5">
-                      <span className="truncate font-medium">{hit.title}</span>
-                      <span
-                        className="truncate text-xs text-muted-foreground [&_mark]:bg-transparent [&_mark]:font-semibold [&_mark]:text-foreground"
-                        dangerouslySetInnerHTML={{ __html: hit.excerpt }}
-                      />
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-          </CommandList>
-        </Command>
-      </CommandDialog>
-    </>
+    <SearchCommand
+      provider={pagefindProvider}
+      unavailableMessage="Search index is built at build time — run bun run build"
+    />
   );
 }
