@@ -12,6 +12,7 @@ import PrevNext from '@/components/PrevNext';
 import TourBar from '@/components/tour/TourBar';
 import TourView from '@/components/tour/TourView';
 import { prevNextInGroup } from '@/lib/prev-next';
+import { PROSE_CLASS } from '@/lib/prose';
 import { isTour, resolveTourSteps, toursForStep } from '@okf/core';
 
 export const dynamicParams = false;
@@ -26,7 +27,13 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
   const concept = bundle.byId.get(slug.map(decodeURIComponent).join('/'));
   if (!concept) notFound();
 
-  const { html, headings } = await renderMarkdownWithHighlight(concept.body, concept.id, (id) => bundle.byId.has(id));
+  const { html, headings } = await renderMarkdownWithHighlight(
+    concept.body,
+    concept.id,
+    (id) => bundle.byId.has(id),
+    undefined,
+    concept.description,
+  );
   const inbound = (bundle.backlinks.get(concept.id) ?? []).map((id) => bundle.byId.get(id)!);
   const outbound = concept.outLinks.map((id) => bundle.byId.get(id)!);
 
@@ -92,10 +99,7 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
           </p>
         )}
 
-        <section
-          className="prose prose-neutral mt-8 max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: html }} />
 
         <Neighborhood
           center={{ id: concept.id, title: concept.title }}

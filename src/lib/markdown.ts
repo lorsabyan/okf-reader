@@ -38,6 +38,13 @@ interface HastNode {
   value?: string;
 }
 
+/** Minimal duck-typed mdast node shape — same rationale as `HastNode`, but for the pre-rehype tree. */
+interface MdastNode {
+  type: string;
+  children?: MdastNode[];
+  value?: string;
+}
+
 function walk(node: HastNode, visit: (el: HastNode) => void): void {
   if (node.type === 'element') visit(node);
   if (Array.isArray(node.children)) {
@@ -88,6 +95,43 @@ function rehypeRewriteLinks(fromId: string, exists: (id: string) => boolean, hre
       properties.href = '#';
       properties.title = `Not yet written: ${id}`;
     });
+  };
+}
+
+function mdastText(node: MdastNode): string {
+  if (typeof node.value === 'string') return node.value;
+  if (Array.isArray(node.children)) return node.children.map(mdastText).join('');
+  return '';
+}
+
+/** lowercase, collapse whitespace, strip trailing punctuation — so "Foo bar." and "foo  bar" compare equal. */
+function normalizeForCompare(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[.!?]+$/, '');
+}
+
+/**
+ * Remark plugin: many bundle authors open a concept body with a sentence
+ * identical to its frontmatter `description`, which then renders twice —
+ * once as the page subtitle, once as the body's first paragraph. If the
+ * body's very first top-level node is a paragraph whose normalized text
+ * matches the normalized description, drop it. Only ever considers that
+ * first node — a heading (or anything else) in that slot means no
+ * paragraph further down is touched.
+ */
+function remarkStripDuplicateDescription(description?: string) {
+  return () => (tree: MdastNode) => {
+    if (!description) return;
+    const target = normalizeForCompare(description);
+    if (!target) return;
+    const children = tree.children;
+    if (!Array.isArray(children) || children.length === 0) return;
+    const first = children[0];
+    if (first.type !== 'paragraph') return;
+    if (normalizeForCompare(mdastText(first)) === target) children.splice(0, 1);
   };
 }
 
@@ -145,10 +189,12 @@ export function buildProcessor(
   exists: (id: string) => boolean,
   hrefFor: (id: string) => string,
   headings: Heading[],
+  dedupeDescription?: string,
 ) {
   return unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(remarkStripDuplicateDescription(dedupeDescription))
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeSlug)
@@ -160,15 +206,20 @@ export function buildProcessor(
  * Render an OKF markdown body to sanitized HTML, rewiring cross-links,
  * synchronously (no syntax highlighting). Used by the client runtime
  * viewer and anywhere else that can't await a promise.
+ *
+ * `dedupeDescription`, when passed (typically a concept's frontmatter
+ * `description`), strips the body's first paragraph if it just repeats
+ * that description — see `remarkStripDuplicateDescription`.
  */
 export function renderMarkdown(
   body: string,
   fromId: string,
   exists: (id: string) => boolean,
   hrefFor: (id: string) => string = conceptHref,
+  dedupeDescription?: string,
 ): RenderResult {
   const headings: Heading[] = [];
-  const file = buildProcessor(fromId, exists, hrefFor, headings)
+  const file = buildProcessor(fromId, exists, hrefFor, headings, dedupeDescription)
     .use(rehypeSanitize, sanitizeSchema)
     .use(rehypeStringify)
     .processSync(body);

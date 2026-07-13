@@ -93,13 +93,11 @@ export default function SearchDialog() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-sm text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
       >
-        <span className="flex items-center gap-1.5">
-          <Search className="size-3.5" />
-          Search…
-        </span>
-        <kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium">⌘K</kbd>
+        <Search className="size-4" />
+        <span className="hidden sm:inline">Search</span>
+        <kbd className="hidden rounded border bg-muted px-1.5 py-0.5 text-[10px] font-medium sm:inline-block">⌘K</kbd>
       </button>
       <CommandDialog open={open} onOpenChange={setOpen} title="Search" description="Search this bundle">
         <Command shouldFilter={false} value={selected} onValueChange={setSelected}>

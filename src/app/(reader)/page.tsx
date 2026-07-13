@@ -4,6 +4,7 @@ import TourSection from '@/components/tour/TourSection';
 import { loadBundle } from '@/lib/bundle';
 import { parseFrontmatter, getTourSummaries } from '@okf/core';
 import { renderMarkdownWithHighlight } from '@/lib/markdown-highlight';
+import { PROSE_CLASS } from '@/lib/prose';
 
 export default async function Home() {
   const bundle = loadBundle();
@@ -41,12 +42,7 @@ export default async function Home() {
 
       <TourSection bundleName={bundle.name} tours={tours} />
 
-      {indexHtml && (
-        <section
-          className="prose prose-neutral mt-8 max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: indexHtml }}
-        />
-      )}
+      {indexHtml && <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: indexHtml }} />}
 
       {recent.length > 0 && (
         <section className="mt-10">

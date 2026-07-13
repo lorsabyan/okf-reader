@@ -20,7 +20,7 @@ export default function Breadcrumbs({
         Home
       </a>
       {dirs.map((segment, i) => (
-        <span key={i} className="flex items-center gap-1.5">
+        <span key={i} className="flex cursor-default items-center gap-1.5">
           <span aria-hidden="true">/</span>
           {segment}
         </span>

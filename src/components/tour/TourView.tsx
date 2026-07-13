@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { conceptHref } from '@/lib/paths';
+import { PROSE_CLASS } from '@/lib/prose';
 import { getTourProgress, setActiveTour } from '@/lib/tour-progress';
 import { firstUnvisitedStep, tourButtonLabel, tourProgressKey, type TourStepInfo } from '@okf/core';
 
@@ -64,12 +65,7 @@ export default function TourView({
       <h1 className="mt-3 text-3xl font-bold tracking-tight">{tour.title}</h1>
       {tour.description && <p className="mt-2 text-lg text-muted-foreground">{tour.description}</p>}
 
-      {introHtml && (
-        <section
-          className="prose prose-neutral mt-8 max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: introHtml }}
-        />
-      )}
+      {introHtml && <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: introHtml }} />}
 
       <section className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-2">

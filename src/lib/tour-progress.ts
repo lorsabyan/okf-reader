@@ -38,16 +38,45 @@ export function activeTourKey(bundleName: string): string {
   return `${ACTIVE_TOUR_PREFIX}${bundleName}`;
 }
 
-/** The tourId currently "active" for this bundle, or null. */
-export function getActiveTour(bundleName: string): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(activeTourKey(bundleName));
+export interface ActiveTourState {
+  id: string;
+  /** `Date.now()` at the last time the tour was actively used (bar rendered, step marked, or explicitly resumed). */
+  lastActiveAt: number;
 }
 
-/** Set (or clear, with `null`) the active tour for this bundle. */
+/** The tour currently "active" for this bundle (id + last-active timestamp), or null. */
+export function getActiveTour(bundleName: string): ActiveTourState | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(activeTourKey(bundleName));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<ActiveTourState>;
+    if (typeof parsed.id === 'string') {
+      return { id: parsed.id, lastActiveAt: typeof parsed.lastActiveAt === 'number' ? parsed.lastActiveAt : Date.now() };
+    }
+  } catch {
+    // Legacy format from before lastActiveAt existed: a bare tourId string.
+  }
+  return { id: raw, lastActiveAt: Date.now() };
+}
+
+/** Set (or clear, with `null`) the active tour for this bundle, refreshing `lastActiveAt` to now. */
 export function setActiveTour(bundleName: string, tourId: string | null): void {
   if (typeof window === 'undefined') return;
   const key = activeTourKey(bundleName);
-  if (tourId) window.localStorage.setItem(key, tourId);
+  if (tourId) window.localStorage.setItem(key, JSON.stringify({ id: tourId, lastActiveAt: Date.now() } satisfies ActiveTourState));
   else window.localStorage.removeItem(key);
+}
+
+const TOUR_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+export type TourBarMode = 'bar' | 'chip';
+
+/**
+ * Pure decision logic for `TourBar`: a tour that hasn't been actively used
+ * in over 7 days renders as a small floating "Resume tour" chip instead of
+ * pinning the full sticky bar to every step page forever.
+ */
+export function tourBarMode(lastActiveAt: number, now: number = Date.now()): TourBarMode {
+  return now - lastActiveAt > TOUR_STALE_AFTER_MS ? 'chip' : 'bar';
 }

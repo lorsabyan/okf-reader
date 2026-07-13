@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { conceptHref } from '@/lib/paths';
-import { getActiveTour, markStepVisited, setActiveTour } from '@/lib/tour-progress';
+import { getActiveTour, markStepVisited, setActiveTour, tourBarMode, type ActiveTourState } from '@/lib/tour-progress';
 import { tourProgressKey } from '@okf/core';
 
 export interface TourBarStep {
@@ -36,37 +36,56 @@ export default function TourBar({
   hrefFor?: (id: string) => string;
 }) {
   const [mounted, setMounted] = useState(false);
-  const [activeTourId, setActiveTourId] = useState<string | null>(null);
+  const [activeTour, setActiveTourState] = useState<ActiveTourState | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    setActiveTourId(getActiveTour(bundleName));
+    setActiveTourState(getActiveTour(bundleName));
   }, [bundleName]);
 
-  const tour = tours.find((t) => t.id === activeTourId);
+  const tour = tours.find((t) => t.id === activeTour?.id);
   const idx = tour ? tour.steps.findIndex((s) => s.id === conceptId) : -1;
+  const stale = mounted && !!activeTour && idx !== -1 && tourBarMode(activeTour.lastActiveAt) === 'chip';
 
   useEffect(() => {
-    if (!tour || idx === -1) return;
+    if (!tour || idx === -1 || stale) return;
+    // Actively viewing a step of the active tour: mark it visited and
+    // refresh lastActiveAt so the bar keeps showing full while genuinely in use.
     markStepVisited(tourProgressKey(bundleName, tour.id), conceptId);
+    setActiveTour(bundleName, tour.id);
     // Only re-run when the identity of the visited step changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tour?.id, conceptId, idx]);
+  }, [tour?.id, conceptId, idx, stale]);
 
   if (!mounted || !tour || idx === -1) return null;
 
   const total = tour.steps.length;
+
+  if (stale) {
+    const onResumeClick = () => {
+      setActiveTour(bundleName, tour.id);
+      setActiveTourState(getActiveTour(bundleName));
+    };
+    return (
+      <div className="fixed bottom-4 right-4 z-50">
+        <Button size="sm" variant="secondary" className="rounded-full shadow-md" onClick={onResumeClick}>
+          Resume tour · {idx + 1}/{total}
+        </Button>
+      </div>
+    );
+  }
+
   const prev = idx > 0 ? tour.steps[idx - 1] : undefined;
   const next = idx < total - 1 ? tour.steps[idx + 1] : undefined;
   const isLast = idx === total - 1;
 
   const exit = () => {
     setActiveTour(bundleName, null);
-    setActiveTourId(null);
+    setActiveTourState(null);
   };
   const finish = () => {
     setActiveTour(bundleName, null);
-    setActiveTourId(null);
+    setActiveTourState(null);
   };
 
   return (

@@ -45,3 +45,43 @@ describe('renderMarkdown', () => {
     expect(html).not.toContain('alert(1)');
   });
 });
+
+describe('renderMarkdown dedupeDescription', () => {
+  test('strips the first paragraph on an exact match', () => {
+    const description = 'A dataset of customer orders.';
+    const body = `${description}\n\nMore detail here.`;
+    const { html } = renderMarkdown(body, 'tables/orders', exists, undefined, description);
+    expect(html).not.toContain('A dataset of customer orders.');
+    expect(html).toContain('More detail here.');
+  });
+
+  test('strips a near match (trailing period and extra whitespace)', () => {
+    const description = 'A dataset of customer orders';
+    const body = 'A dataset of customer orders.  \n\nMore detail here.';
+    const { html } = renderMarkdown(body, 'tables/orders', exists, undefined, description);
+    expect(html).not.toContain('A dataset of customer orders');
+    expect(html).toContain('More detail here.');
+  });
+
+  test('keeps the first paragraph when it differs from the description', () => {
+    const description = 'A dataset of customer orders.';
+    const body = 'Something else entirely.\n\nMore detail here.';
+    const { html } = renderMarkdown(body, 'tables/orders', exists, undefined, description);
+    expect(html).toContain('Something else entirely.');
+    expect(html).toContain('More detail here.');
+  });
+
+  test('only ever considers the very first node — a matching later paragraph is kept', () => {
+    const description = 'A dataset of customer orders.';
+    const body = `# Overview\n\n${description}\n\nMore detail here.`;
+    const { html } = renderMarkdown(body, 'tables/orders', exists, undefined, description);
+    expect(html).toContain('A dataset of customer orders.');
+    expect(html).toContain('More detail here.');
+  });
+
+  test('does nothing when no description is passed', () => {
+    const body = 'A dataset of customer orders.\n\nMore detail here.';
+    const { html } = renderMarkdown(body, 'tables/orders', exists);
+    expect(html).toContain('A dataset of customer orders.');
+  });
+});

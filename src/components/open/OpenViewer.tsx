@@ -45,6 +45,7 @@ import {
 import { loadHandle, saveHandle, deleteHandle, listHandleKeys } from '@/lib/idb-handles';
 import { renderMarkdown } from '@/lib/markdown';
 import { prevNextInGroup } from '@/lib/prev-next';
+import { PROSE_CLASS } from '@/lib/prose';
 import {
   deleteRecent,
   getRecents,
@@ -87,18 +88,13 @@ function Markdown({ bundle, body, fromId }: { bundle: CoreBundle; body: string; 
     () => renderMarkdown(body, fromId, (id) => bundle.byId.has(id), hashHref),
     [bundle, body, fromId],
   );
-  return (
-    <section
-      className="prose prose-neutral mt-8 max-w-none dark:prose-invert"
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
+  return <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept }) {
   const tour = isTour(concept);
   const rendered = useMemo(
-    () => renderMarkdown(concept.body, concept.id, (id) => bundle.byId.has(id), hashHref),
+    () => renderMarkdown(concept.body, concept.id, (id) => bundle.byId.has(id), hashHref, concept.description),
     [bundle, concept],
   );
   const candidateTours = useMemo(
@@ -165,10 +161,7 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
             </a>
           </p>
         )}
-        <section
-          className="prose prose-neutral mt-8 max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: rendered.html }}
-        />
+        <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: rendered.html }} />
         <Neighborhood
           center={{ id: concept.id, title: concept.title }}
           inbound={inbound.map(({ id, title }) => ({ id, title }))}
@@ -523,29 +516,31 @@ function RecentsSection({
           const canOpen = entry.kind === 'github' || handleNames.has(entry.name);
           const key = entry.kind === 'github' ? `github:${entry.src}` : `local:${entry.name}`;
           return (
-            <li key={key} className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50">
-              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+            <li key={key} className="flex items-center gap-1 rounded-md py-2 pl-2 pr-1 hover:bg-muted/50">
               <button
                 type="button"
                 disabled={!canOpen || busy}
                 title={canOpen ? undefined : 're-select the folder to reopen'}
                 onClick={() => open(entry)}
                 className={cn(
-                  'min-w-0 flex-1 truncate text-left text-sm',
-                  canOpen ? 'text-foreground hover:underline' : 'cursor-not-allowed text-muted-foreground',
+                  'flex min-w-0 flex-1 items-center gap-2 text-left text-sm',
+                  canOpen ? 'text-foreground' : 'cursor-not-allowed text-muted-foreground',
                 )}
               >
-                {entry.name}
-                {entry.kind === 'github' && (
-                  <span className="ml-1.5 text-xs text-muted-foreground">({entry.src})</span>
-                )}
+                <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate">
+                  {entry.name}
+                  {entry.kind === 'github' && (
+                    <span className="ml-1.5 text-xs text-muted-foreground">({entry.src})</span>
+                  )}
+                </span>
+                <span className="shrink-0 text-xs text-muted-foreground">{relativeTime(entry.openedAt)}</span>
               </button>
-              <span className="shrink-0 text-xs text-muted-foreground">{relativeTime(entry.openedAt)}</span>
               <button
                 type="button"
                 aria-label={`Remove ${entry.name} from recents`}
                 onClick={() => remove(entry)}
-                className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <X className="size-3.5" />
               </button>

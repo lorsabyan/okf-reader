@@ -17,9 +17,10 @@ export async function renderMarkdownWithHighlight(
   fromId: string,
   exists: (id: string) => boolean,
   hrefFor: (id: string) => string = conceptHref,
+  dedupeDescription?: string,
 ): Promise<RenderResult> {
   const headings: Heading[] = [];
-  const file = await buildProcessor(fromId, exists, hrefFor, headings)
+  const file = await buildProcessor(fromId, exists, hrefFor, headings, dedupeDescription)
     .use(rehypeShiki, { themes: { light: 'github-light', dark: 'github-dark' } })
     .use(rehypeSanitize, sanitizeSchema)
     .use(rehypeStringify)

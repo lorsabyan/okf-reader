@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Inter } from 'next/font/google';
-import { Activity, FolderOpen } from 'lucide-react';
 import { loadBundle } from '@/lib/bundle';
+import HeaderNav from '@/components/HeaderNav';
 import ThemeProvider from '@/components/ThemeProvider';
-import ThemeToggle from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -35,24 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="font-bold tracking-tight">
               OKF Reader
             </Link>
-            <span className="text-sm text-muted-foreground">{bundle.name}</span>
-            <div className="ml-auto flex items-center gap-1">
-              <Link
-                href="/health/"
-                className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-              >
-                <Activity className="size-4" />
-                Health
-              </Link>
-              <Link
-                href="/open/"
-                className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
-              >
-                <FolderOpen className="size-4" />
-                Open bundle
-              </Link>
-              <ThemeToggle />
-            </div>
+            <HeaderNav bundleName={bundle.name} />
           </header>
           {children}
         </ThemeProvider>
