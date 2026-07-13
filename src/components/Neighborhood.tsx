@@ -5,6 +5,8 @@ interface Node {
   title: string;
 }
 
+type HrefFor = (id: string) => string;
+
 const ROW = 46;
 const BOX_W = 210;
 const BOX_H = 34;
@@ -14,7 +16,19 @@ function truncate(s: string, n = 26) {
   return s.length > n ? s.slice(0, n - 1) + '…' : s;
 }
 
-function NodeBox({ node, x, y, center = false }: { node: Node; x: number; y: number; center?: boolean }) {
+function NodeBox({
+  node,
+  x,
+  y,
+  center = false,
+  hrefFor = conceptHref,
+}: {
+  node: Node;
+  x: number;
+  y: number;
+  center?: boolean;
+  hrefFor?: HrefFor;
+}) {
   const box = (
     <g>
       <rect
@@ -30,14 +44,24 @@ function NodeBox({ node, x, y, center = false }: { node: Node; x: number; y: num
       </text>
     </g>
   );
-  return center ? box : <a href={conceptHref(node.id)}>{box}</a>;
+  return center ? box : <a href={hrefFor(node.id)}>{box}</a>;
 }
 
 /**
  * Local-neighborhood graph: inbound concepts on the left, the current
  * concept in the middle, outbound links on the right.
  */
-export default function Neighborhood({ center, inbound, outbound }: { center: Node; inbound: Node[]; outbound: Node[] }) {
+export default function Neighborhood({
+  center,
+  inbound,
+  outbound,
+  hrefFor = conceptHref,
+}: {
+  center: Node;
+  inbound: Node[];
+  outbound: Node[];
+  hrefFor?: HrefFor;
+}) {
   if (!inbound.length && !outbound.length) return null;
   const rows = Math.max(inbound.length, outbound.length, 1);
   const height = rows * ROW + 20;
@@ -77,10 +101,10 @@ export default function Neighborhood({ center, inbound, outbound }: { center: No
           );
         })}
         {inbound.map((n, i) => (
-          <NodeBox key={n.id} node={n} x={10} y={colY(i, inbound.length)} />
+          <NodeBox key={n.id} node={n} x={10} y={colY(i, inbound.length)} hrefFor={hrefFor} />
         ))}
         {outbound.map((n, i) => (
-          <NodeBox key={n.id} node={n} x={WIDTH - BOX_W - 10} y={colY(i, outbound.length)} />
+          <NodeBox key={n.id} node={n} x={WIDTH - BOX_W - 10} y={colY(i, outbound.length)} hrefFor={hrefFor} />
         ))}
         <NodeBox node={center} x={cx} y={midY} center />
       </svg>

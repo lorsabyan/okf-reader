@@ -1,8 +1,7 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { loadBundle } from '@/lib/bundle';
+import { parseFrontmatter } from '@/lib/core';
 import { renderMarkdown } from '@/lib/markdown';
 
 export default function Home() {
@@ -15,9 +14,9 @@ export default function Home() {
     .sort((a, b) => (b.timestamp! < a.timestamp! ? -1 : 1))
     .slice(0, 8);
 
-  const rootIndex = path.join(bundle.dir, 'index.md');
-  const indexHtml = fs.existsSync(rootIndex)
-    ? renderMarkdown(fs.readFileSync(rootIndex, 'utf-8').replace(/^---[\s\S]*?---\n/, ''), '', (id) => bundle.byId.has(id))
+  const rootIndex = bundle.files.get('index.md');
+  const indexHtml = rootIndex
+    ? renderMarkdown(parseFrontmatter(rootIndex).body, '', (id) => bundle.byId.has(id))
     : null;
 
   return (

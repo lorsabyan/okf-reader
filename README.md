@@ -11,6 +11,16 @@ skill for authoring and validating OKF bundles.
 
 Built with Next.js 16, React 19, Tailwind CSS v4, shadcn/ui, and Bun.
 
+**Live demo:** https://lorsabyan.github.io/okf-reader/ — browse the baked-in
+GA4 bundle, or hit **Open bundle** to load your own:
+
+- **Local folder** — read directly in the browser via the File System Access
+  API (with a `webkitdirectory` fallback). Nothing is uploaded anywhere.
+- **Public GitHub repo** — paste `owner/repo` or a
+  `github.com/…/tree/branch/subdir` URL; the bundle is fetched client-side
+  through the CORS-enabled GitHub Trees API + raw.githubusercontent.com.
+  Runtime-mode HTML is sanitized with DOMPurify.
+
 ## Run
 
 ```sh

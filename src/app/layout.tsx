@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Inter } from 'next/font/google';
-import { loadBundle, navGroups } from '@/lib/bundle';
-import Sidebar from '@/components/Sidebar';
+import { FolderOpen } from 'lucide-react';
+import { loadBundle } from '@/lib/bundle';
 import ThemeProvider from '@/components/ThemeProvider';
 import ThemeToggle from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
@@ -17,10 +17,6 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const bundle = loadBundle();
-  const groups = navGroups(bundle).map(({ group, items }) => ({
-    group,
-    items: items.map(({ id, title, type, tags }) => ({ id, title, type, tags })),
-  }));
 
   return (
     <html lang="en" className={cn('font-sans', inter.variable)} suppressHydrationWarning>
@@ -31,14 +27,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               OKF Reader
             </Link>
             <span className="text-sm text-muted-foreground">{bundle.name}</span>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1">
+              <Link
+                href="/open/"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+              >
+                <FolderOpen className="size-4" />
+                Open bundle
+              </Link>
               <ThemeToggle />
             </div>
           </header>
-          <div className="mx-auto grid max-w-screen-2xl md:grid-cols-[300px_1fr]">
-            <Sidebar groups={groups} />
-            <main className="min-w-0 px-6 py-8 md:px-12">{children}</main>
-          </div>
+          {children}
         </ThemeProvider>
       </body>
     </html>
