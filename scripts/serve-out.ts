@@ -8,6 +8,11 @@ import { join, normalize, resolve, sep } from 'node:path';
 
 const ROOT = resolve(join(import.meta.dir, '..', 'out'));
 const PORT = Number(process.env.PORT ?? 4173);
+// When set, mimics hosting `out/` under a sub-path (e.g. GitHub Pages'
+// `/<repo>/`) instead of at the origin root: requests must carry the prefix
+// to be served, everything else 404s. Used by e2e/basepath.e2e.ts to catch
+// regressions where base-path-prefixed hrefs get lost (see src/lib/paths.ts).
+const BASE_PATH = process.env.E2E_BASE_PATH ?? '';
 
 /** Resolve a request pathname inside ROOT, rejecting any path traversal. */
 function resolveWithinRoot(pathname: string): string | null {
@@ -30,7 +35,15 @@ const server = Bun.serve({
   port: PORT,
   fetch(req) {
     const url = new URL(req.url);
-    const resolved = resolveWithinRoot(url.pathname);
+    let pathname = url.pathname;
+
+    if (BASE_PATH) {
+      if (pathname === BASE_PATH) pathname = '/';
+      else if (pathname.startsWith(BASE_PATH + '/')) pathname = pathname.slice(BASE_PATH.length);
+      else return new Response('Not found (missing base path prefix)', { status: 404 });
+    }
+
+    const resolved = resolveWithinRoot(pathname);
     if (!resolved) return new Response('Forbidden', { status: 403 });
 
     let target = resolved;

@@ -7,10 +7,13 @@
     "packages/*"
   ],
   "scripts": {
+    "predev": "bun run --cwd packages/okf-core build",
     "dev": "next dev",
+    "prebuild": "bun run --cwd packages/okf-core build",
     "build": "next build && pagefind --site out",
     "start": "next start",
     "test": "bun test",
+    "pretypecheck": "bun run --cwd packages/okf-core build",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
     "screenshots": "bun scripts/screenshots.ts"

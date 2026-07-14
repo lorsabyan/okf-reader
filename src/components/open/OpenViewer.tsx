@@ -48,6 +48,7 @@ import { loadHandle, saveHandle, deleteHandle, listHandleKeys } from '@/lib/idb-
 import { renderMarkdown } from '@/lib/markdown';
 import { prevNextInGroup } from '@/lib/prev-next';
 import { PROSE_CLASS } from '@/lib/prose';
+import { isSafeResourceUrl } from '@/lib/resource-url';
 import { searchBundle } from '@/lib/search-bundle';
 import {
   deleteRecent,
@@ -75,10 +76,29 @@ function setShareParam(src: string | null) {
   window.history.replaceState(null, '', url.toString());
 }
 
+/**
+ * Only hashes of the form `#/id` (or the bare `#`/empty hash, meaning
+ * home) are routes owned by this viewer. A plain anchor like `#some-heading`
+ * (e.g. a "On this page" TOC link) must NOT be treated as a route change —
+ * doing so used to swallow the click and show "No concept" instead of
+ * letting the browser scroll to the anchor. So on a hashchange that
+ * doesn't match `^#\/`, leave the current route state alone.
+ */
 function useHashRoute(): string {
   const [route, setRoute] = useState('');
   useEffect(() => {
-    const read = () => setRoute(decodeURIComponent(window.location.hash.replace(/^#\/?/, '')));
+    const read = () => {
+      const hash = window.location.hash;
+      if (hash !== '' && !/^#\//.test(hash)) return;
+      const raw = hash.replace(/^#\/?/, '');
+      try {
+        setRoute(decodeURIComponent(raw));
+      } catch {
+        // Malformed percent-escapes (e.g. `#/100%`) would otherwise throw a
+        // URIError inside this effect and take down the component tree.
+        setRoute(raw);
+      }
+    };
     read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
@@ -153,15 +173,19 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
         {concept.description && <p className="mt-2 text-lg text-muted-foreground">{concept.description}</p>}
         {concept.resource && (
           <p className="mt-2 break-all text-sm">
-            <a
-              href={concept.resource}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-primary hover:underline"
-            >
-              <ExternalLink className="size-3.5 shrink-0" />
-              {concept.resource}
-            </a>
+            {isSafeResourceUrl(concept.resource) ? (
+              <a
+                href={concept.resource}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <ExternalLink className="size-3.5 shrink-0" />
+                {concept.resource}
+              </a>
+            ) : (
+              concept.resource
+            )}
           </p>
         )}
         <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: rendered.html }} />
@@ -256,20 +280,24 @@ function HomeView({ bundle }: { bundle: CoreBundle }) {
 }
 
 function ShareButton() {
-  const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const share = async () => {
-    await navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setStatus('copied');
+    } catch {
+      setStatus('failed');
+    }
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(false), 1500);
+    timer.current = setTimeout(() => setStatus('idle'), 1500);
   };
 
   return (
     <Button variant="outline" size="sm" onClick={share}>
-      {copied ? <Check className="size-3.5" /> : <LinkIcon className="size-3.5" />}
-      {copied ? 'Copied' : 'Share'}
+      {status === 'copied' ? <Check className="size-3.5" /> : <LinkIcon className="size-3.5" />}
+      {status === 'copied' ? 'Copied' : status === 'failed' ? 'Copy failed' : 'Share'}
     </Button>
   );
 }
@@ -429,6 +457,22 @@ function BundleShell({
   const groups = useMemo(() => navGroups(bundle), [bundle]);
   const concept = route && route !== HEALTH_ROUTE ? bundle.byId.get(route) : undefined;
 
+  // On an actual route change (not a plain in-page anchor — those are
+  // filtered out of `route` by useHashRoute), reset scroll and move focus
+  // into the main region so keyboard/AT users aren't left stranded where
+  // the previous page happened to be scrolled (e.g. after clicking "Next"
+  // at the bottom of a long concept).
+  const mainRef = useRef<HTMLElement>(null);
+  const isFirstRoute = useRef(true);
+  useEffect(() => {
+    if (isFirstRoute.current) {
+      isFirstRoute.current = false;
+      return;
+    }
+    window.scrollTo(0, 0);
+    mainRef.current?.focus({ preventScroll: true });
+  }, [route]);
+
   // Recomputed only when the bundle itself changes — cheap (scored scan at
   // bundle scale), and keeps the debounce effect in SearchCommand stable
   // across re-renders that don't swap the bundle.
@@ -504,7 +548,7 @@ function BundleShell({
             onOpenSearch={openSearch}
           />
         </nav>
-        <main className="min-w-0 px-6 py-8 md:px-12">
+        <main ref={mainRef} tabIndex={-1} className="min-w-0 px-6 py-8 outline-none md:px-12">
           {route === HEALTH_ROUTE ? (
             <HealthView bundle={bundle} />
           ) : concept ? (

@@ -13,6 +13,7 @@ import TourBar from '@/components/tour/TourBar';
 import TourView from '@/components/tour/TourView';
 import { prevNextInGroup } from '@/lib/prev-next';
 import { PROSE_CLASS } from '@/lib/prose';
+import { isSafeResourceUrl } from '@/lib/resource-url';
 import { isTour, resolveTourSteps, toursForStep } from '@okf/core';
 
 export const dynamicParams = false;
@@ -87,15 +88,19 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
         {concept.description && <p className="mt-2 text-lg text-muted-foreground">{concept.description}</p>}
         {concept.resource && (
           <p className="mt-2 break-all text-sm">
-            <a
-              href={concept.resource}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-primary hover:underline"
-            >
-              <ExternalLink className="size-3.5 shrink-0" />
-              {concept.resource}
-            </a>
+            {isSafeResourceUrl(concept.resource) ? (
+              <a
+                href={concept.resource}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                <ExternalLink className="size-3.5 shrink-0" />
+                {concept.resource}
+              </a>
+            ) : (
+              concept.resource
+            )}
           </p>
         )}
 

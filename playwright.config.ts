@@ -1,5 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// e2e/basepath.e2e.ts sets this (and builds+serves under it) to reproduce
+// GitHub Pages' sub-path hosting; every other spec runs with '' (origin root).
+const BASE_PATH = process.env.E2E_BASE_PATH ?? '';
+
 /**
  * Smoke suite runs against the static `out/` build (run `bun run build`
  * first) — not `next dev`. The webServer starts scripts/serve-out.ts, a
@@ -17,13 +21,16 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:4173',
+    // Trailing slash matters: relative goto()s (e.g. 'c/tours/x/') resolve
+    // against this like a browser resolves an <a href>, so without it the
+    // last path segment (here, the base path itself) would be dropped.
+    baseURL: `http://localhost:4173${BASE_PATH}/`,
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'bun scripts/serve-out.ts',
-    url: 'http://localhost:4173',
+    url: `http://localhost:4173${BASE_PATH}/`,
     reuseExistingServer: !process.env.CI,
   },
 });

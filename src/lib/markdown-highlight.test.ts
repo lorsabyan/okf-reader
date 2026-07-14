@@ -28,4 +28,9 @@ describe('renderMarkdownWithHighlight', () => {
     const { html } = await renderMarkdownWithHighlight('See [orders](/tables/orders.md).', '', exists);
     expect(html).toContain('href="/c/tables/orders/"');
   });
+
+  test('allows arbitrary inline style (server-only pipeline, shiki-aware schema)', async () => {
+    const { html } = await renderMarkdownWithHighlight('Hi <span style="color:red">there</span>.', 'tables/orders', exists);
+    expect(html).toContain('style="color:red"');
+  });
 });

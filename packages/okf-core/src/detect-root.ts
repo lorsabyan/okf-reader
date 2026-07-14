@@ -1,4 +1,4 @@
-import { RESERVED, extractLinkTargets, isReservedTarget, resolveLink } from './core.ts';
+import { RESERVED, extractLinkTargets, isReservedTarget, parseFrontmatter, resolveLink } from './core.ts';
 
 /**
  * Detects when a file map's "real" bundle root is a subdirectory of what
@@ -89,8 +89,7 @@ export function detectBundleRoot(files: Map<string, string>): DetectedRoot | nul
   // reserved targets (index/log — always legal, never "resolve" to a page).
   const linkIds: string[] = [];
   for (const path of conceptPaths) {
-    const text = files.get(path)!;
-    const body = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+    const { body } = parseFrontmatter(files.get(path)!);
     for (const target of extractLinkTargets(body)) {
       if (!target.startsWith('/')) continue;
       const id = resolveLink(target, '');

@@ -1,99 +1,50 @@
 import fs from 'node:fs';
-import path from 'node:path';
-import { load as parseYaml } from 'js-yaml';
-import { buildBundle, RESERVED, type CoreBundle } from './core.ts';
-import { analyzeBundle } from './health.ts';
+import { validateBundle } from './validate.ts';
 
 /**
- * `okf-validate` — v0.1 conformance checker for an OKF bundle directory.
- * Node-only (fs/path); the library itself (core/tours/health) stays
- * browser-safe. Mirrors the semantics of the reference Python validator
- * (okf/scripts/validate_okf.py in lorsabyan/okf-skill):
- *   - missing or unparseable YAML frontmatter -> error
- *   - missing/empty `type` field -> error
- *   - everything analyzeBundle finds (broken links, missing descriptions,
- *     untyped, stale, undated, orphans) -> warnings
- * Exit code: 1 on errors (or on warnings with --strict), 0 otherwise.
+ * `okf-validate` CLI entry point. Thin wrapper around `validateBundle`
+ * (./validate.ts): argv parsing, printing, and the process exit code only —
+ * the fs-walking/validation logic lives there so it can be imported (and
+ * tested) without triggering this module's `process.exit`.
+ *
+ * Exit codes: 0 clean, 1 errors (or warnings with --strict), 2 usage/IO error.
  */
 
-const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+const USAGE = 'usage: okf-validate <bundle-dir> [--strict]';
 
-function walk(dir: string, root: string, acc: Map<string, string>): Map<string, string> {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.')) continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, root, acc);
-    else if (entry.name.endsWith('.md')) {
-      const rel = path.relative(root, full).split(path.sep).join('/');
-      acc.set(rel, fs.readFileSync(full, 'utf-8'));
-    }
-  }
-  return acc;
+interface ParsedArgs {
+  target: string;
+  strict: boolean;
 }
 
-/** Whether `text` has a well-formed `---\n...\n---` YAML frontmatter block. */
-function hasValidFrontmatter(text: string): boolean {
-  const m = text.match(FRONTMATTER_RE);
-  if (!m) return false;
-  try {
-    parseYaml(m[1]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export interface ValidationResult {
-  bundle: CoreBundle;
-  errors: string[];
-  warnings: string[];
-}
-
-/** Read a bundle directory from disk and check it against the OKF v0.1 spec. */
-export function validateBundle(dir: string): ValidationResult {
-  const resolved = path.resolve(dir);
-  const name = path.basename(resolved);
-  const files = walk(resolved, resolved, new Map());
-  const bundle = buildBundle(files, name);
-
-  const errors: string[] = [];
-  for (const [relPath, text] of files) {
-    const base = relPath.slice(relPath.lastIndexOf('/') + 1);
-    if (RESERVED.has(base)) continue;
-
-    if (!hasValidFrontmatter(text)) {
-      errors.push(`${relPath}: missing or unparseable YAML frontmatter block`);
-      continue;
-    }
-    const id = relPath.replace(/\.md$/, '');
-    const concept = bundle.byId.get(id);
-    if (concept && !concept.typeExplicit) {
-      errors.push(`${relPath}: frontmatter is missing a non-empty 'type' field`);
+/** Strict argv parser: exactly one positional (the bundle dir) plus an optional `--strict`. */
+function parseArgs(argv: string[]): ParsedArgs | null {
+  let target: string | undefined;
+  let strict = false;
+  for (const arg of argv) {
+    if (arg === '--strict') {
+      if (strict) return null; // duplicate flag
+      strict = true;
+    } else if (arg.startsWith('-')) {
+      return null; // unknown flag
+    } else if (target === undefined) {
+      target = arg;
+    } else {
+      return null; // extra positional argument
     }
   }
-
-  const report = analyzeBundle(bundle);
-  const warnings: string[] = [
-    ...report.brokenLinks.map(({ fromId, target }) => `${fromId}: link to missing concept '${target}'`),
-    ...report.missingDescriptions.map((id) => `${id}: no 'description' - index generators and previews rely on it`),
-    ...report.untyped.map((id) => `${id}: frontmatter is missing a non-empty 'type' field (defaulted to 'Concept')`),
-    ...report.stale.map(({ id, timestamp }) => `${id}: 'timestamp' (${timestamp}) is more than a year old`),
-    ...report.undated.map((id) => `${id}: no 'timestamp' field`),
-    ...report.orphans.map((id) => `${id}: orphan - no inbound or outbound links`),
-  ];
-
-  return { bundle, errors, warnings };
+  if (target === undefined) return null;
+  return { target, strict };
 }
 
 function main(argv: string[]): number {
-  const args = argv.slice(2);
-  const strict = args.includes('--strict');
-  const target = args.find((a) => !a.startsWith('--'));
-
-  if (!target) {
-    console.error('usage: okf-validate <bundle-dir> [--strict]');
+  const parsed = parseArgs(argv.slice(2));
+  if (!parsed) {
+    console.error(USAGE);
     return 2;
   }
+  const { target, strict } = parsed;
+
   if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
     console.error(`error: ${target} is not a directory`);
     return 2;

@@ -19,3 +19,11 @@ jobs:
       - run: bun run build
       - run: bunx playwright install --with-deps chromium
       - run: bun run e2e
+      # Rebuild under a base path (mirrors the GitHub Pages deploy) and run
+      # just the regression spec for it — see e2e/basepath.e2e.ts.
+      - run: bun run build
+        env:
+          NEXT_BASE_PATH: /okf-reader
+      - run: bunx playwright test e2e/basepath.e2e.ts
+        env:
+          E2E_BASE_PATH: /okf-reader

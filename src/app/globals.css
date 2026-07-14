@@ -130,13 +130,13 @@
 }
 /* Cross-link states emitted by the markdown renderer */
 @layer components {
-  .prose a.link-broken {
+  .prose .link-broken {
     color: var(--color-muted-foreground);
     text-decoration: none;
     border-bottom: 1px dashed var(--color-muted-foreground);
     cursor: help;
   }
-  .prose a.link-plain {
+  .prose .link-plain {
     color: inherit;
     font-weight: 600;
     text-decoration: none;

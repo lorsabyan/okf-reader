@@ -72,6 +72,12 @@ const MD_HREF_RE = /\.md(#.*)?$/;
  * pass did — existing concepts route via `hrefFor`; reserved (index/log)
  * targets become inert plain text; missing concepts become inert but
  * visibly "not yet written" markers. External URLs are left untouched.
+ *
+ * Inert links are demoted from `<a>` to `<span>` (href dropped entirely,
+ * class names kept) rather than left as `<a href="#">`: in the hash-routed
+ * runtime viewer an inert `href="#"` actually navigates — it resets the
+ * route hash and dumps the reader on the bundle home — and in the static
+ * reader it scrolls to top. A `<span>` can't navigate at all.
  */
 function rehypeRewriteLinks(fromId: string, exists: (id: string) => boolean, hrefFor: (id: string) => string) {
   return () => (tree: HastNode) => {
@@ -81,18 +87,28 @@ function rehypeRewriteLinks(fromId: string, exists: (id: string) => boolean, hre
       const href = properties.href;
       if (typeof href !== 'string' || !MD_HREF_RE.test(href) || EXTERNAL_RE.test(href)) return;
 
-      const id = resolveLink(href, fromId);
+      // Split the fragment off before resolving: resolveLink()/exists() work
+      // against concept ids, which never include a `#section` suffix — left
+      // attached, `foo.md#section` would fail to resolve and a valid link
+      // would render as "not yet written" with the anchor lost.
+      const hashIndex = href.indexOf('#');
+      const path = hashIndex === -1 ? href : href.slice(0, hashIndex);
+      const fragment = hashIndex === -1 ? '' : href.slice(hashIndex);
+
+      const id = resolveLink(path, fromId);
       if (exists(id)) {
-        properties.href = hrefFor(id);
+        properties.href = hrefFor(id) + fragment;
         return;
       }
       if (isReservedTarget(id)) {
         addClassName(properties, 'link-plain');
-        properties.href = '#';
+        node.tagName = 'span';
+        delete properties.href;
         return;
       }
       addClassName(properties, 'link-broken');
-      properties.href = '#';
+      node.tagName = 'span';
+      delete properties.href;
       properties.title = `Not yet written: ${id}`;
     });
   };
@@ -153,14 +169,21 @@ function rehypeCollectHeadings(sink: Heading[]) {
 /**
  * Sanitize schema: GitHub-style default, extended for what this reader's
  * own pipeline output needs — `className` on links (our `link-plain` /
- * `link-broken` markers) and on `code`/`span`/`pre` (shiki's output
- * classes), plus inline `style` on `code`/`span`/`pre` (shiki emits
- * per-token colors as inline styles for its dual light/dark themes —
- * that's the pragmatic call: we only open `style` on the three elements
- * shiki actually touches, nothing else). Heading `id`s (slug anchors) are
- * already permitted by the default schema's `*` rule; we just exempt
- * `id` from DOM-clobber prefixing so anchors match what rehype-slug and
- * the TOC agree on.
+ * `link-broken` markers, now rendered on `span`) and on `code`/`span`/`pre`
+ * (shiki's output classes). Heading `id`s (slug anchors) are already
+ * permitted by the default schema's `*` rule; we just exempt `id` from
+ * DOM-clobber prefixing so anchors match what rehype-slug and the TOC
+ * agree on.
+ *
+ * Deliberately does NOT allow `style` on anything. `sanitizeSchemaWithStyle`
+ * below is a second variant that does — used only by the server-only
+ * highlight pipeline (`markdown-highlight.ts`), where shiki emits per-token
+ * colors as inline styles for its dual light/dark themes. This plain
+ * `sanitizeSchema` is what the client runtime pipeline (`renderMarkdown`)
+ * uses: shiki never runs there, so there's no legitimate need for `style`,
+ * and opening it up would let a malicious bundle (e.g. opened via a shared
+ * `?src=` link) inject a `<span style="position:fixed;inset:0;...">`
+ * full-page overlay.
  */
 function widenClassName(entries: unknown[] | undefined): unknown[] {
   const rest = (entries ?? []).filter((entry) =>
@@ -172,9 +195,9 @@ function widenClassName(entries: unknown[] | undefined): unknown[] {
 const attributes: Record<string, unknown[]> = {
   ...(defaultSchema.attributes as Record<string, unknown[]>),
   a: widenClassName(defaultSchema.attributes?.a),
-  code: [...widenClassName(defaultSchema.attributes?.code), 'style'],
-  span: ['className', 'style'],
-  pre: ['className', 'style'],
+  code: widenClassName(defaultSchema.attributes?.code),
+  span: ['className'],
+  pre: ['className'],
 };
 
 export const sanitizeSchema = {
@@ -182,6 +205,17 @@ export const sanitizeSchema = {
   clobber: (defaultSchema.clobber ?? []).filter((name) => name !== 'id'),
   attributes,
 } as SanitizeSchema;
+
+/** `sanitizeSchema`, but with `style` additionally allowed on `code`/`span`/`pre` — see the doc comment above. Only used by `markdown-highlight.ts`. */
+export const sanitizeSchemaWithStyle: SanitizeSchema = {
+  ...sanitizeSchema,
+  attributes: {
+    ...attributes,
+    code: [...attributes.code, 'style'],
+    span: [...attributes.span, 'style'],
+    pre: [...attributes.pre, 'style'],
+  } as SanitizeSchema['attributes'],
+};
 
 /** Build the shared remark→rehype pipeline, stopping short of sanitize/stringify so callers can splice in shiki. */
 export function buildProcessor(

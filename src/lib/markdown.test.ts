@@ -14,17 +14,39 @@ describe('renderMarkdown', () => {
     expect(html).toContain('href="/c/tables/orders/"');
   });
 
-  test('marks links to missing concepts as broken, not navigable', () => {
+  test('marks links to missing concepts as broken, inert spans (not navigable anchors)', () => {
     const { html } = renderMarkdown('See [ghost](/tables/ghost.md).', 'tables/orders', exists);
     expect(html).toContain('link-broken');
     expect(html).toContain('Not yet written: tables/ghost');
     expect(html).not.toContain('href="/c/tables/ghost/"');
+    expect(html).toContain('<span class="link-broken"');
+    expect(html).not.toContain('<a');
+    expect(html).not.toMatch(/href="#"/);
   });
 
-  test('de-links reserved index/log targets to plain text', () => {
+  test('de-links reserved index/log targets to inert plain-text spans', () => {
     const { html } = renderMarkdown('[datasets](datasets/index.md) and [log](/log.md)', '', exists);
     const matches = html.match(/link-plain/g) ?? [];
     expect(matches.length).toBe(2);
+    expect(html).toContain('<span class="link-plain">datasets</span>');
+    expect(html).not.toContain('<a');
+    expect(html).not.toMatch(/href="#"/);
+  });
+
+  test('resolves an anchored cross-link to an existing concept, keeping the fragment', () => {
+    const { html } = renderMarkdown('See [customers](/tables/customers.md#schema).', 'datasets/sales', exists);
+    expect(html).toContain('href="/c/tables/customers/#schema"');
+  });
+
+  test('an anchored link to a missing concept is still reported broken (fragment does not mask it)', () => {
+    const { html } = renderMarkdown('See [ghost](/tables/ghost.md#section).', 'tables/orders', exists);
+    expect(html).toContain('link-broken');
+    expect(html).toContain('Not yet written: tables/ghost');
+  });
+
+  test('client pipeline strips inline style attributes (not shiki-aware)', () => {
+    const { html } = renderMarkdown('Hi <span style="position:fixed;inset:0;background:red">boo</span> there.', 'tables/orders', exists);
+    expect(html).not.toContain('style=');
   });
 
   test('leaves external URLs untouched', () => {

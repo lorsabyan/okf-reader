@@ -1,7 +1,7 @@
 import rehypeShiki from '@shikijs/rehype';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeStringify from 'rehype-stringify';
-import { buildProcessor, sanitizeSchema, type Heading, type RenderResult } from './markdown';
+import { buildProcessor, sanitizeSchemaWithStyle, type Heading, type RenderResult } from './markdown';
 import { conceptHref } from './paths';
 
 /**
@@ -22,7 +22,7 @@ export async function renderMarkdownWithHighlight(
   const headings: Heading[] = [];
   const file = await buildProcessor(fromId, exists, hrefFor, headings, dedupeDescription)
     .use(rehypeShiki, { themes: { light: 'github-light', dark: 'github-dark' } })
-    .use(rehypeSanitize, sanitizeSchema)
+    .use(rehypeSanitize, sanitizeSchemaWithStyle)
     .use(rehypeStringify)
     .process(body);
   return { html: String(file), headings };

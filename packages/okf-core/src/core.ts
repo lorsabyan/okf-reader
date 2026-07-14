@@ -6,11 +6,28 @@ import { load as parseYaml } from 'js-yaml';
  */
 
 export const RESERVED = new Set(['index.md', 'log.md']);
-const LINK_RE = /\]\(([^)\s]+?\.md)(?:#[^)]*)?\)/g;
+
+// Matches inline markdown links/images: optional leading `!` (image marker),
+// `[text](target)` with an optional `<angle-bracketed target>` form and an
+// optional trailing `"title"`/`'title'`. Link text itself is not allowed to
+// contain `]` — good enough for concept prose, no nested-bracket support.
+const LINK_RE = /(!?)\[[^\]]*\]\(\s*(?:<([^>]*)>|([^\s()]*))(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g;
+
+const SCHEME_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 
 /** Extract raw markdown link targets (e.g. "tables/orders.md") from a concept body. */
 export function extractLinkTargets(body: string): string[] {
-  return [...body.matchAll(LINK_RE)].map((m) => m[1]);
+  const targets: string[] = [];
+  for (const m of body.matchAll(LINK_RE)) {
+    if (m[1] === '!') continue; // image, not a concept link
+    const raw = m[2] ?? m[3] ?? '';
+    if (!raw) continue;
+    const withoutFragment = raw.split('#')[0];
+    if (!withoutFragment.endsWith('.md')) continue;
+    if (SCHEME_RE.test(withoutFragment) || withoutFragment.startsWith('//')) continue; // external
+    targets.push(withoutFragment);
+  }
+  return targets;
 }
 
 /** True for reserved-file link targets (index/log) that never have a concept page. */
@@ -41,35 +58,58 @@ export interface CoreBundle {
   files: Map<string, string>;
 }
 
-/** Minimal, browser-safe frontmatter split. Returns empty data when absent/unparseable. */
-export function parseFrontmatter(text: string): { data: Record<string, unknown>; body: string } {
-  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
-  if (!m) return { data: {}, body: text };
+/**
+ * Minimal, browser-safe frontmatter split. Returns empty data when
+ * absent/unparseable; `frontmatter` reports which of the three cases it
+ * was ('ok' | 'invalid' YAML | 'none' at all), so strict consumers like
+ * okf-validate can distinguish them without re-parsing.
+ */
+export function parseFrontmatter(text: string): {
+  data: Record<string, unknown>;
+  body: string;
+  frontmatter: 'ok' | 'invalid' | 'none';
+} {
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1); // strip leading BOM (Windows-authored files)
+  const m = text.match(/^---\r?\n([\s\S]*?)(?:\r?\n)?---\r?\n?/);
+  if (!m) return { data: {}, body: text, frontmatter: 'none' };
+  // js-yaml throws on an empty document; an empty `---\n---` block is a
+  // well-formed frontmatter delimiter with no fields, not invalid YAML.
+  if (!m[1].trim()) return { data: {}, body: text.slice(m[0].length), frontmatter: 'ok' };
   try {
     const data = parseYaml(m[1]);
     return {
       data: data && typeof data === 'object' ? (data as Record<string, unknown>) : {},
       body: text.slice(m[0].length),
+      frontmatter: 'ok',
     };
   } catch {
-    return { data: {}, body: text.slice(m[0].length) };
+    return { data: {}, body: text.slice(m[0].length), frontmatter: 'invalid' };
   }
 }
 
-/** Normalize a posix-ish path: resolves '.' and '..', collapses slashes. */
+/**
+ * Normalize a posix-ish path: resolves '.' and '..', collapses slashes.
+ * A '..' that would climb above the segments collected so far is kept
+ * verbatim (not clamped) so the result stays a path that escapes the
+ * bundle root — that can never match a real concept id, so callers'
+ * `exists()` checks correctly flag it as broken instead of it silently
+ * (and wrongly) resolving to some unrelated root-level concept.
+ */
 function normalizePosix(p: string): string {
   const out: string[] = [];
   for (const part of p.split('/')) {
     if (!part || part === '.') continue;
-    if (part === '..') out.pop();
-    else out.push(part);
+    if (part === '..') {
+      if (out.length && out[out.length - 1] !== '..') out.pop();
+      else out.push('..');
+    } else out.push(part);
   }
   return out.join('/');
 }
 
 /** Resolve a markdown link target to a concept id, relative to the linking doc. */
 export function resolveLink(target: string, fromId: string): string {
-  const clean = target.replace(/\.md$/, '');
+  const clean = target.split('#')[0].replace(/\.md$/, '');
   if (clean.startsWith('/')) return normalizePosix(clean);
   const fromDir = fromId.includes('/') ? fromId.slice(0, fromId.lastIndexOf('/')) : '';
   return normalizePosix(`${fromDir}/${clean}`);
@@ -87,11 +127,12 @@ export function buildBundle(files: Map<string, string>, name: string): CoreBundl
     if (path.split('/').some((part) => part.startsWith('.'))) continue;
     const id = path.replace(/\.md$/, '');
     const { data, body } = parseFrontmatter(text);
+    const typeExplicit = typeof data.type === 'string' && data.type.trim() !== '';
     concepts.push({
       id,
       title: typeof data.title === 'string' ? data.title : id.split('/').pop()!,
-      type: typeof data.type === 'string' ? data.type : 'Concept',
-      typeExplicit: typeof data.type === 'string',
+      type: typeExplicit ? (data.type as string) : 'Concept',
+      typeExplicit,
       description: typeof data.description === 'string' ? data.description : '',
       resource: typeof data.resource === 'string' ? data.resource : undefined,
       tags: Array.isArray(data.tags) ? data.tags.map(String) : [],

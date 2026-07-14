@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { buildBundle, parseFrontmatter } from './core.ts';
+import { buildBundle, extractLinkTargets, parseFrontmatter, resolveLink } from './core.ts';
 
 describe('parseFrontmatter', () => {
   test('parses YAML block and returns body', () => {
@@ -18,6 +18,53 @@ describe('parseFrontmatter', () => {
   test('returns empty data when frontmatter is absent or invalid', () => {
     expect(parseFrontmatter('no frontmatter').data).toEqual({});
     expect(parseFrontmatter('---\n: [unclosed\n---\nbody').data).toEqual({});
+  });
+
+  test('strips a leading BOM before parsing', () => {
+    const { data, body } = parseFrontmatter('﻿---\ntype: Table\n---\nBody.');
+    expect(data.type).toBe('Table');
+    expect(body.trim()).toBe('Body.');
+  });
+
+  test('supports a zero-line (empty) frontmatter block', () => {
+    const { data, body } = parseFrontmatter('---\n---\nBody.');
+    expect(data).toEqual({});
+    expect(body.trim()).toBe('Body.');
+  });
+});
+
+describe('extractLinkTargets', () => {
+  test('extracts a titled link', () => {
+    expect(extractLinkTargets('See [b](b.md "my title") for more.')).toEqual(['b.md']);
+  });
+
+  test('extracts an angle-bracketed target with a space', () => {
+    expect(extractLinkTargets('See [x](<my file.md>).')).toEqual(['my file.md']);
+  });
+
+  test('does not extract external .md URLs', () => {
+    expect(extractLinkTargets('See the [spec](https://example.com/spec.md).')).toEqual([]);
+    expect(extractLinkTargets('See the [spec](//example.com/spec.md).')).toEqual([]);
+  });
+
+  test('does not extract image links', () => {
+    expect(extractLinkTargets('![diagram](pic.md)')).toEqual([]);
+  });
+
+  test('extracts a fragment link and strips the fragment', () => {
+    expect(extractLinkTargets('See [section](foo.md#section).')).toEqual(['foo.md']);
+  });
+});
+
+describe('resolveLink', () => {
+  test('resolves a fragment link to the same id as the plain target', () => {
+    expect(resolveLink('foo.md#section', 'a/b')).toBe(resolveLink('foo.md', 'a/b'));
+  });
+
+  test('does not clamp traversal above the bundle root to a real concept id', () => {
+    const id = resolveLink('../../../x.md', 'a/b');
+    expect(id.startsWith('..')).toBe(true);
+    expect(id).not.toBe('x');
   });
 });
 
@@ -46,6 +93,45 @@ describe('buildBundle', () => {
 
   test('keeps reserved files accessible in files map', () => {
     expect(bundle.files.get('index.md')).toContain('# Root');
+  });
+});
+
+describe('buildBundle type handling', () => {
+  test('an empty-string type is not treated as explicit', () => {
+    const files = new Map([['a.md', '---\ntype: ""\n---\nBody.']]);
+    const bundle = buildBundle(files, 'test');
+    const concept = bundle.byId.get('a')!;
+    expect(concept.typeExplicit).toBe(false);
+    expect(concept.type).toBe('Concept');
+  });
+});
+
+describe('buildBundle link extraction edge cases', () => {
+  test('titled, angle-bracket, external, image, and fragment links resolve as expected', () => {
+    const files = new Map([
+      [
+        'a.md',
+        [
+          '---\ntype: Concept\n---',
+          '[b](b.md "my title")',
+          '[c](<my file.md>)',
+          '[spec](https://example.com/spec.md)',
+          '![diagram](pic.md)',
+          '[d](d.md#section)',
+        ].join('\n'),
+      ],
+      ['b.md', '---\ntype: Concept\n---\nB.'],
+      ['my file.md', '---\ntype: Concept\n---\nSpaced file.'],
+      ['d.md', '---\ntype: Concept\n---\nD.'],
+      ['pic.md', '---\ntype: Concept\n---\nShould not be linked via the image tag.'],
+    ]);
+    const bundle = buildBundle(files, 'test');
+    const a = bundle.byId.get('a')!;
+    expect(a.outLinks).toContain('b');
+    expect(a.outLinks).toContain('my file');
+    expect(a.outLinks).toContain('d');
+    expect(a.outLinks).not.toContain('pic');
+    expect(a.outLinks).not.toContain('https:/example.com/spec');
   });
 });
 
