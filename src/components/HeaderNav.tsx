@@ -7,7 +7,7 @@ import SearchDialog from '@/components/SearchDialog';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const navLinkClass =
-  'inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground';
+  'inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground';
 
 /**
  * Client half of the global header (see `src/app/layout.tsx`): everything
@@ -29,18 +29,18 @@ export default function HeaderNav({ bundleName }: { bundleName: string }) {
 
   return (
     <>
-      {!isOpenRoute && <span className="truncate text-sm text-muted-foreground">{bundleName}</span>}
-      <div className="ml-auto flex items-center gap-1">
+      {!isOpenRoute && <span className="min-w-0 truncate text-sm text-muted-foreground">{bundleName}</span>}
+      <div className="ml-auto flex shrink-0 items-center gap-1">
         {!isOpenRoute && <SearchDialog />}
         {!isOpenRoute && (
           <Link href="/health/" className={navLinkClass}>
             <Activity className="size-4" />
-            Health
+            <span className="sr-only sm:not-sr-only sm:inline">Health</span>
           </Link>
         )}
         <Link href="/open/" className={navLinkClass}>
           <FolderOpen className="size-4" />
-          Open bundle
+          <span className="sr-only sm:not-sr-only sm:inline">Open bundle</span>
         </Link>
         <ThemeToggle />
       </div>

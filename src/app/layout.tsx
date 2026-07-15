@@ -36,8 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         <ThemeProvider>
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b bg-background/80 px-5 backdrop-blur">
-            <Link href="/" className="font-bold tracking-tight">
+          <header className="sticky top-0 z-20 flex h-14 min-w-0 items-center gap-3 border-b bg-background/80 px-5 backdrop-blur">
+            <Link href="/" className="shrink-0 whitespace-nowrap font-bold tracking-tight">
               OKF Reader
             </Link>
             <HeaderNav bundleName={bundle.name} />

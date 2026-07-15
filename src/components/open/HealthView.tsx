@@ -16,17 +16,19 @@ function ConceptLink({ bundle, id }: { bundle: CoreBundle; id: string }) {
 function Section({
   title,
   count,
+  severity = 'warning',
   children,
 }: {
   title: string;
   count: number;
+  severity?: 'destructive' | 'warning';
   children?: React.ReactNode;
 }) {
   return (
     <section className="mt-8">
       <div className="flex items-center gap-2">
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-        <Badge variant={count > 0 ? 'secondary' : 'outline'}>{count}</Badge>
+        <Badge variant={count > 0 ? severity : 'outline'}>{count}</Badge>
       </div>
       <div className="mt-3">
         {count > 0 ? children : <p className="text-sm text-muted-foreground">none 🎉</p>}
@@ -49,24 +51,24 @@ export default function HealthView({ bundle }: { bundle: CoreBundle }) {
         <Badge variant={report.brokenLinks.length ? 'destructive' : 'outline'}>
           Broken links <span className="ml-1 font-bold">{report.brokenLinks.length}</span>
         </Badge>
-        <Badge variant={report.missingDescriptions.length ? 'secondary' : 'outline'}>
+        <Badge variant={report.missingDescriptions.length ? 'warning' : 'outline'}>
           Missing descriptions <span className="ml-1 font-bold">{report.missingDescriptions.length}</span>
         </Badge>
-        <Badge variant={report.untyped.length ? 'secondary' : 'outline'}>
+        <Badge variant={report.untyped.length ? 'warning' : 'outline'}>
           Untyped <span className="ml-1 font-bold">{report.untyped.length}</span>
         </Badge>
-        <Badge variant={report.stale.length ? 'secondary' : 'outline'}>
+        <Badge variant={report.stale.length ? 'warning' : 'outline'}>
           Stale <span className="ml-1 font-bold">{report.stale.length}</span>
         </Badge>
-        <Badge variant={report.undated.length ? 'secondary' : 'outline'}>
+        <Badge variant={report.undated.length ? 'warning' : 'outline'}>
           Undated <span className="ml-1 font-bold">{report.undated.length}</span>
         </Badge>
-        <Badge variant={report.orphans.length ? 'secondary' : 'outline'}>
+        <Badge variant={report.orphans.length ? 'warning' : 'outline'}>
           Orphans <span className="ml-1 font-bold">{report.orphans.length}</span>
         </Badge>
       </div>
 
-      <Section title="Broken links" count={report.brokenLinks.length}>
+      <Section title="Broken links" count={report.brokenLinks.length} severity="destructive">
         <ul className="space-y-2">
           {report.brokenLinks.map(({ fromId, target }) => (
             <li key={`${fromId}->${target}`} className="text-sm leading-relaxed">

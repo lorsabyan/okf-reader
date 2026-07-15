@@ -87,16 +87,16 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
         <h1 className="mt-3 text-3xl font-bold tracking-tight">{concept.title}</h1>
         {concept.description && <p className="mt-2 text-lg text-muted-foreground">{concept.description}</p>}
         {concept.resource && (
-          <p className="mt-2 break-all text-sm">
+          <p className="mt-2 break-words text-sm">
             {isSafeResourceUrl(concept.resource) ? (
               <a
                 href={concept.resource}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-primary hover:underline"
+                className="inline-flex max-w-full items-center gap-1 text-primary hover:underline"
               >
                 <ExternalLink className="size-3.5 shrink-0" />
-                {concept.resource}
+                <span className="min-w-0">{concept.resource}</span>
               </a>
             ) : (
               concept.resource
