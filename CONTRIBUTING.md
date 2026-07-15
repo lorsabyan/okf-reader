@@ -26,10 +26,12 @@ bun run typecheck && bun test && bun run build && bun run e2e
 
 ## Pull requests
 
-- Match existing code style; keep `packages/okf-core` browser-safe (no
-  `node:*` imports outside `src/cli.ts`).
+- Match existing code style; keep `@okf/core`'s `index.ts` (and everything it
+  re-exports) browser-safe — `node:*` imports only in `src/cli.ts` and
+  `src/validate.ts`.
 - Add or update unit tests for `src/` and `packages/okf-core/src` changes,
-  and e2e coverage (`e2e/smoke.spec.ts`) for user-facing flows.
+  and e2e coverage (`e2e/smoke.e2e.ts`) for user-facing flows (the `.e2e.ts`
+  suffix is required so `bun test` ignores Playwright specs).
 - No new runtime dependencies in the app without discussion — `@playwright/test`
   and similar tooling stay dev-only.
 - Keep PRs focused; note any follow-up work rather than expanding scope.

@@ -41,15 +41,24 @@ export async function pickDirectory(): Promise<{ files: Map<string, string>; nam
 }
 
 export async function readHandle(dir: DirHandle, prefix: string, acc: Map<string, string>) {
+  const subdirs: [string, DirHandle][] = [];
+  const files: [string, Promise<string>][] = [];
   for await (const [name, entry] of dir.entries()) {
     if (name.startsWith('.')) continue;
     const path = prefix ? `${prefix}/${name}` : name;
-    if (entry.kind === 'directory') {
-      await readHandle(entry, path, acc);
-    } else if (name.endsWith('.md')) {
-      acc.set(path, await (await entry.getFile()).text());
-    }
+    if (entry.kind === 'directory') subdirs.push([path, entry]);
+    else if (name.endsWith('.md')) files.push([path, entry.getFile().then((f) => f.text())]);
   }
+  const texts = await Promise.all(files.map(([, p]) => p));
+  files.forEach(([path], i) => acc.set(path, texts[i]));
+  const subMaps = await Promise.all(
+    subdirs.map(async ([path, entry]) => {
+      const sub = new Map<string, string>();
+      await readHandle(entry, path, sub);
+      return sub;
+    }),
+  );
+  for (const sub of subMaps) for (const [p, t] of sub) acc.set(p, t);
 }
 
 /**
@@ -76,13 +85,16 @@ export async function reopenDirectory(
 export async function readFileList(list: FileList): Promise<{ files: Map<string, string>; name: string }> {
   const files = new Map<string, string>();
   let name = 'bundle';
+  const kept: [string, File][] = [];
   for (const file of Array.from(list)) {
     const rel = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
     const parts = rel.split('/');
     if (parts.length > 1) name = parts[0];
     const path = parts.slice(1).join('/') || parts[0];
     if (!path.endsWith('.md') || path.split('/').some((p) => p.startsWith('.'))) continue;
-    files.set(path, await file.text());
+    kept.push([path, file]);
   }
+  const texts = await Promise.all(kept.map(([, f]) => f.text()));
+  kept.forEach(([path], i) => files.set(path, texts[i]));
   return { files, name };
 }

@@ -22,6 +22,7 @@ import SearchCommand, { type Hit } from '@/components/search/SearchCommand';
 import TourBar from '@/components/tour/TourBar';
 import TourSection from '@/components/tour/TourSection';
 import TourView from '@/components/tour/TourView';
+import ViewerErrorBoundary from '@/components/open/ViewerErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,8 +49,9 @@ import { loadHandle, saveHandle, deleteHandle, listHandleKeys } from '@/lib/idb-
 import { renderMarkdown } from '@/lib/markdown';
 import { prevNextInGroup } from '@/lib/prev-next';
 import { PROSE_CLASS } from '@/lib/prose';
+import { cachedCompute } from '@/lib/render-cache';
 import { isSafeResourceUrl } from '@/lib/resource-url';
-import { searchBundle } from '@/lib/search-bundle';
+import { buildBundleIndex, searchBundle, type BundleIndex } from '@/lib/search-bundle';
 import {
   deleteRecent,
   getRecents,
@@ -108,7 +110,7 @@ function useHashRoute(): string {
 
 function Markdown({ bundle, body, fromId }: { bundle: CoreBundle; body: string; fromId: string }) {
   const { html } = useMemo(
-    () => renderMarkdown(body, fromId, (id) => bundle.byId.has(id), hashHref),
+    () => cachedCompute(bundle, `md:${fromId}`, () => renderMarkdown(body, fromId, (id) => bundle.byId.has(id), hashHref)),
     [bundle, body, fromId],
   );
   return <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: html }} />;
@@ -117,7 +119,10 @@ function Markdown({ bundle, body, fromId }: { bundle: CoreBundle; body: string; 
 function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept }) {
   const tour = isTour(concept);
   const rendered = useMemo(
-    () => renderMarkdown(concept.body, concept.id, (id) => bundle.byId.has(id), hashHref, concept.description),
+    () =>
+      cachedCompute(bundle, `c:${concept.id}`, () =>
+        renderMarkdown(concept.body, concept.id, (id) => bundle.byId.has(id), hashHref, concept.description),
+      ),
     [bundle, concept],
   );
   const candidateTours = useMemo(
@@ -297,7 +302,9 @@ function ShareButton() {
   return (
     <Button variant="outline" size="sm" onClick={share}>
       {status === 'copied' ? <Check className="size-3.5" /> : <LinkIcon className="size-3.5" />}
-      {status === 'copied' ? 'Copied' : status === 'failed' ? 'Copy failed' : 'Share'}
+      <span aria-live="polite">
+        {status === 'copied' ? 'Copied' : status === 'failed' ? 'Copy failed' : 'Share'}
+      </span>
     </Button>
   );
 }
@@ -337,6 +344,7 @@ function RootSuggestionBanner({
 /** Filter input + grouped concept list + header actions, shared between the desktop `<nav>` and the mobile drawer. */
 function BundleNavContent({
   bundle,
+  index,
   groups,
   route,
   shareable,
@@ -345,6 +353,7 @@ function BundleNavContent({
   onOpenSearch,
 }: {
   bundle: CoreBundle;
+  index: BundleIndex;
   groups: { group: string; items: Concept[] }[];
   route: string;
   shareable: boolean;
@@ -354,18 +363,13 @@ function BundleNavContent({
 }) {
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
-  const bodies = useMemo(
-    () => new Map(bundle.concepts.map((c) => [c.id, c.body.toLowerCase()])),
-    [bundle],
-  );
 
-  const matchesMeta = (c: Concept) =>
-    !needle ||
-    c.title.toLowerCase().includes(needle) ||
-    c.id.toLowerCase().includes(needle) ||
-    c.type.toLowerCase().includes(needle) ||
-    c.tags.some((t) => t.toLowerCase().includes(needle));
-  const matchesBody = (c: Concept) => !!needle && (bodies.get(c.id) ?? '').includes(needle);
+  const matchesMeta = (c: Concept) => {
+    if (!needle) return true;
+    const e = index.get(c.id);
+    return !!e && (e.title.includes(needle) || e.id.includes(needle) || e.type.includes(needle) || e.tags.some((t) => t.includes(needle)));
+  };
+  const matchesBody = (c: Concept) => !!needle && !!index.get(c.id)?.body.includes(needle);
   const match = (c: Concept) => matchesMeta(c) || matchesBody(c);
 
   return (
@@ -419,6 +423,7 @@ function BundleNavContent({
                     <a
                       href={hashHref(c.id)}
                       onClick={onNavigate}
+                      aria-current={route === c.id ? 'page' : undefined}
                       className={cn(
                         'block rounded-md px-2 py-1.5 text-sm leading-snug hover:bg-accent hover:text-accent-foreground',
                         route === c.id && 'bg-accent font-medium text-accent-foreground',
@@ -455,6 +460,7 @@ function BundleShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const groups = useMemo(() => navGroups(bundle), [bundle]);
+  const index = useMemo(() => buildBundleIndex(bundle), [bundle]);
   const concept = route && route !== HEALTH_ROUTE ? bundle.byId.get(route) : undefined;
 
   // On an actual route change (not a plain in-page anchor — those are
@@ -478,12 +484,12 @@ function BundleShell({
   // across re-renders that don't swap the bundle.
   const searchProvider = useMemo(() => {
     return async (query: string): Promise<Hit[]> =>
-      searchBundle(bundle, query).map((hit) => ({
+      searchBundle(bundle, query, 8, index).map((hit) => ({
         href: hashHref(hit.id),
         title: hit.title,
         excerptHtml: hit.excerptHtml,
       }));
-  }, [bundle]);
+  }, [bundle, index]);
 
   const handleSearchSelect = useCallback((hit: Hit) => {
     window.location.hash = hit.href;
@@ -525,6 +531,7 @@ function BundleShell({
               </SheetHeader>
               <BundleNavContent
                 bundle={bundle}
+                index={index}
                 groups={groups}
                 route={route}
                 shareable={shareable}
@@ -541,6 +548,7 @@ function BundleShell({
         <nav className="hidden border-b bg-muted/30 md:sticky md:top-14 md:block md:h-[calc(100vh-3.5rem)] md:border-b-0 md:border-r">
           <BundleNavContent
             bundle={bundle}
+            index={index}
             groups={groups}
             route={route}
             shareable={shareable}
@@ -548,16 +556,18 @@ function BundleShell({
             onOpenSearch={openSearch}
           />
         </nav>
-        <main ref={mainRef} tabIndex={-1} className="min-w-0 px-6 py-8 outline-none md:px-12">
-          {route === HEALTH_ROUTE ? (
-            <HealthView bundle={bundle} />
-          ) : concept ? (
-            <ConceptView bundle={bundle} concept={concept} />
-          ) : route ? (
-            <p className="text-muted-foreground">No concept “{route}” in this bundle.</p>
-          ) : (
-            <HomeView bundle={bundle} />
-          )}
+        <main ref={mainRef} tabIndex={-1} id="main-content" className="min-w-0 px-6 py-8 outline-none md:px-12">
+          <ViewerErrorBoundary key={route}>
+            {route === HEALTH_ROUTE ? (
+              <HealthView bundle={bundle} />
+            ) : concept ? (
+              <ConceptView bundle={bundle} concept={concept} />
+            ) : route ? (
+              <p className="text-muted-foreground">No concept “{route}” in this bundle.</p>
+            ) : (
+              <HomeView bundle={bundle} />
+            )}
+          </ViewerErrorBoundary>
         </main>
       </div>
     </>
@@ -724,10 +734,12 @@ export default function OpenViewer() {
         );
         const resolvedRef: GithubRef = { ...ref, branch };
         const ok = load(files, name, opts);
-        setGithubRef(resolvedRef);
-        const src = formatGithubRef(resolvedRef);
-        setShareParam(src);
-        if (ok) recordGithubRecent(src, name);
+        if (ok) {
+          setGithubRef(resolvedRef);
+          const src = formatGithubRef(resolvedRef);
+          setShareParam(src);
+          recordGithubRecent(src, name);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -880,6 +892,7 @@ export default function OpenViewer() {
               onChange={(e) => setRepoUrl(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && openGithub()}
               disabled={!!busy}
+              aria-label="GitHub repository (owner/repo or URL)"
             />
             <Button onClick={openGithub} disabled={!!busy || !repoUrl.trim()}>
               Open
@@ -888,11 +901,15 @@ export default function OpenViewer() {
         </Card>
       </div>
       {busy && (
-        <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" /> {busy}
+        <p role="status" className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" aria-hidden /> {busy}
         </p>
       )}
-      {error && <p className="mt-6 text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-6 text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
       <RecentsSection busy={!!busy} onOpenGithub={openGithubRecent} onOpenLocal={openLocalRecent} />
     </div>

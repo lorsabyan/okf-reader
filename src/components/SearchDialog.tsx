@@ -23,7 +23,13 @@ function loadPagefind(): Promise<PagefindApi> {
     const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
     // Escape hatch so Turbopack doesn't try to statically resolve/bundle this at build time —
     // the file only exists after `next build` runs pagefind over `out/`.
-    pagefindPromise = new Function('u', 'return import(u)')(`${base}/pagefind/pagefind.js`) as Promise<PagefindApi>;
+    const loading = new Function('u', 'return import(u)')(`${base}/pagefind/pagefind.js`) as Promise<PagefindApi>;
+    // A rejected import (dev server without a built index, transient fetch
+    // failure) must not be memoized forever — let the next search retry.
+    loading.catch(() => {
+      if (pagefindPromise === loading) pagefindPromise = null;
+    });
+    pagefindPromise = loading;
   }
   return pagefindPromise;
 }

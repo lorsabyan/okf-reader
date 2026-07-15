@@ -1,0 +1,3 @@
+#!/bin/sh
+# Fast local gate — full build/e2e stays in CI.
+bun run typecheck && bun test

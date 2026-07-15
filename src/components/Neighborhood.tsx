@@ -44,7 +44,13 @@ function NodeBox({
       </text>
     </g>
   );
-  return center ? box : <a href={hrefFor(node.id)}>{box}</a>;
+  return center ? (
+    box
+  ) : (
+    <a href={hrefFor(node.id)} aria-label={node.title}>
+      {box}
+    </a>
+  );
 }
 
 /**
@@ -76,7 +82,7 @@ export default function Neighborhood({
       </figcaption>
       <svg
         viewBox={`0 0 ${WIDTH} ${height}`}
-        role="img"
+        role="group"
         aria-label={`Concepts linked with ${center.title}`}
         className="mt-2 h-auto w-full text-xs"
       >

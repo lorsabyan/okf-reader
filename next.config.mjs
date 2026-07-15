@@ -9,9 +9,6 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_BASE_PATH: process.env.NEXT_BASE_PATH ?? '',
   },
-  // @okf/core is an unbuilt workspace package (exports point at TS source);
-  // tell Next to run it through its own transpiler like app code.
-  transpilePackages: ['@okf/core'],
 };
 
 export default nextConfig;

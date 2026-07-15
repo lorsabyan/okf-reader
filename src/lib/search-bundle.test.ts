@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { Concept } from '@okf/core';
-import { searchBundle } from './search-bundle';
+import { buildBundleIndex, searchBundle } from './search-bundle';
 
 function concept(overrides: Partial<Concept> & Pick<Concept, 'id'>): Concept {
   return {
@@ -83,5 +83,45 @@ describe('searchBundle', () => {
     };
     expect(searchBundle(bundle, 'pageviews', 3)).toHaveLength(3);
     expect(searchBundle(bundle, 'pageviews')).toHaveLength(8);
+  });
+});
+
+describe('buildBundleIndex', () => {
+  test('lowercases every field, keyed by the concept id', () => {
+    const bundle = {
+      concepts: [
+        concept({
+          id: 'Tables/Orders',
+          title: 'Orders TABLE',
+          type: 'Table',
+          description: 'A Dataset OF Orders',
+          tags: ['Sales', 'CORE'],
+          body: 'Some BODY text with Pageviews',
+        }),
+      ],
+    };
+    const index = buildBundleIndex(bundle);
+    const entry = index.get('Tables/Orders')!;
+    expect(entry.title).toBe('orders table');
+    expect(entry.id).toBe('tables/orders');
+    expect(entry.type).toBe('table');
+    expect(entry.description).toBe('a dataset of orders');
+    expect(entry.tags).toEqual(['sales', 'core']);
+    expect(entry.tagsAndType).toBe('sales core table');
+    expect(entry.body).toBe('some body text with pageviews');
+    expect(entry.combined).toBe('orders table a dataset of orders sales core table some body text with pageviews');
+  });
+
+  test('searchBundle with a precomputed index returns identical results to computing it internally', () => {
+    const bundle = {
+      concepts: [
+        concept({ id: 'a', title: 'Something else', body: 'mentions pageviews once in passing' }),
+        concept({ id: 'b', title: 'Average Pageviews', description: 'total pageviews per session' }),
+        concept({ id: 'c', title: 'Unrelated', body: 'no relevant terms here' }),
+      ],
+    };
+    const index = buildBundleIndex(bundle);
+    expect(searchBundle(bundle, 'pageviews', 8, index)).toEqual(searchBundle(bundle, 'pageviews'));
+    expect(searchBundle(bundle, 'pageviews session', 8, index)).toEqual(searchBundle(bundle, 'pageviews session'));
   });
 });

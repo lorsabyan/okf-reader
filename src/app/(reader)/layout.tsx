@@ -19,7 +19,9 @@ export default function ReaderLayout({ children }: { children: React.ReactNode }
       </div>
       <div className="mx-auto grid max-w-screen-2xl md:grid-cols-[300px_1fr]">
         <Sidebar groups={groups} />
-        <main className="min-w-0 px-6 py-8 md:px-12">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 px-6 py-8 outline-none md:px-12">
+          {children}
+        </main>
       </div>
     </>
   );

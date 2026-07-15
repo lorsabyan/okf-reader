@@ -67,6 +67,7 @@ export function SidebarContent({
                       <Link
                         href={href}
                         onClick={onNavigate}
+                        aria-current={active ? 'page' : undefined}
                         className={cn(
                           'block rounded-md px-2 py-1.5 text-sm leading-snug hover:bg-accent hover:text-accent-foreground',
                           active && 'bg-accent font-medium text-accent-foreground',

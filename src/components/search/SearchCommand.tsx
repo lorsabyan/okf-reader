@@ -63,6 +63,15 @@ export default function SearchCommand({
   const setOpen = (next: boolean) => {
     if (controlledOpen === undefined) setUncontrolledOpen(next);
     onOpenChange?.(next);
+    if (!next) {
+      // Fresh palette on every open: discard this session's query, results,
+      // and unavailable flag, and invalidate any in-flight request.
+      requestIdRef.current++;
+      setQuery('');
+      setHits([]);
+      setSelected('');
+      setUnavailable(false);
+    }
   };
 
   const [query, setQuery] = useState('');
@@ -72,6 +81,7 @@ export default function SearchCommand({
   const [selected, setSelected] = useState('');
   const [unavailable, setUnavailable] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -91,13 +101,16 @@ export default function SearchCommand({
       return;
     }
     clearTimeout(debounceRef.current);
+    const requestId = ++requestIdRef.current;
     debounceRef.current = setTimeout(async () => {
       try {
         const results = await provider(query);
+        if (requestId !== requestIdRef.current) return; // stale response — a newer query is in charge
         setUnavailable(false);
         setHits(results);
         setSelected(results[0]?.href ?? '');
       } catch {
+        if (requestId !== requestIdRef.current) return;
         setUnavailable(true);
         setHits([]);
       }

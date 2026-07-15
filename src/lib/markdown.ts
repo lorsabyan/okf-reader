@@ -110,6 +110,15 @@ function rehypeRewriteLinks(fromId: string, exists: (id: string) => boolean, hre
       node.tagName = 'span';
       delete properties.href;
       properties.title = `Not yet written: ${id}`;
+      node.children = [
+        ...(node.children ?? []),
+        {
+          type: 'element',
+          tagName: 'span',
+          properties: { className: ['sr-only'] },
+          children: [{ type: 'text', value: ' (not yet written)' }],
+        },
+      ];
     });
   };
 }

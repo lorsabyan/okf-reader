@@ -95,7 +95,7 @@ export default function TourBar({
         <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center justify-between gap-2 px-4 py-2.5 md:px-6">
           <div className="min-w-0 truncate text-sm">
             <span className="font-medium">{tour.title}</span>
-            <span className="ml-2 text-muted-foreground">
+            <span role="status" className="ml-2 text-muted-foreground">
               Step {idx + 1} of {total}
             </span>
           </div>

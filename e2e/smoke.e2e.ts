@@ -24,9 +24,12 @@ test('sidebar navigation shows the type badge, and a known concept has a "Cited 
   // Concrete backlink case: the events table cites Event Count, so Event
   // Count's page should list it under "Cited by".
   await expect(page.getByRole('heading', { name: 'Cited by' })).toBeVisible();
+  // Scope to the list: the connection-graph SVG node link carries the same
+  // accessible name (aria-label), so an article-wide role query matches both.
   await expect(
     page
       .getByRole('article')
+      .getByRole('list')
       .getByRole('link', { name: /Events table \(Google Analytics BigQuery Export\)/ }),
   ).toBeVisible();
 });

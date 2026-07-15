@@ -14,6 +14,39 @@ export interface BundleHit {
   score: number;
 }
 
+export interface ConceptIndexEntry {
+  title: string;
+  id: string;
+  type: string;
+  description: string;
+  tags: string[];
+  tagsAndType: string;
+  body: string;
+  combined: string;
+}
+
+/** Lowercased search/filter fields per concept, keyed by the concept's original id. */
+export type BundleIndex = Map<string, ConceptIndexEntry>;
+
+/** Build once per bundle (the caller memoizes); every field is pre-lowercased. */
+export function buildBundleIndex(bundle: Pick<CoreBundle, 'concepts'>): BundleIndex {
+  const index: BundleIndex = new Map();
+  for (const c of bundle.concepts) {
+    const title = c.title.toLowerCase();
+    const id = c.id.toLowerCase();
+    const type = c.type.toLowerCase();
+    const description = c.description.toLowerCase();
+    const tags = c.tags.map((t) => t.toLowerCase());
+    const tagsAndType = [...tags, type].join(' ');
+    const body = c.body.toLowerCase();
+    index.set(c.id, {
+      title, id, type, description, tags, tagsAndType, body,
+      combined: `${title} ${description} ${tagsAndType} ${body}`,
+    });
+  }
+  return index;
+}
+
 const EXCERPT_TARGET_LENGTH = 120;
 const EXCERPT_HALF_WINDOW = 60;
 
@@ -83,17 +116,20 @@ function buildExcerpt(source: string, words: string[]): string {
 }
 
 /** Case-insensitive AND-across-words search over a bundle's concepts. */
-export function searchBundle(bundle: Pick<CoreBundle, 'concepts'>, query: string, limit = 8): BundleHit[] {
+export function searchBundle(
+  bundle: Pick<CoreBundle, 'concepts'>,
+  query: string,
+  limit = 8,
+  index?: BundleIndex,
+): BundleHit[] {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
+  const idx = index ?? buildBundleIndex(bundle);
 
   const matches: { concept: Concept; score: number }[] = [];
   for (const concept of bundle.concepts) {
-    const title = concept.title.toLowerCase();
-    const description = concept.description.toLowerCase();
-    const tagsAndType = [...concept.tags, concept.type].join(' ').toLowerCase();
-    const body = concept.body.toLowerCase();
-    const combined = `${title} ${description} ${tagsAndType} ${body}`;
+    const entry = idx.get(concept.id)!;
+    const { title, description, tagsAndType, body, combined } = entry;
 
     let score = 0;
     let matchesAllWords = true;
@@ -114,7 +150,7 @@ export function searchBundle(bundle: Pick<CoreBundle, 'concepts'>, query: string
   matches.sort((a, b) => b.score - a.score);
 
   return matches.slice(0, limit).map(({ concept, score }) => {
-    const bodyLower = concept.body.toLowerCase();
+    const bodyLower = idx.get(concept.id)!.body;
     const matchedInBody = words.some((w) => bodyLower.includes(w));
     const source = matchedInBody ? concept.body : concept.description;
     return {
