@@ -37,6 +37,6 @@
     "prepack": "bun run build"
   },
   "dependencies": {
-    "js-yaml": "5.2.1"
+    "js-yaml": "5.2.2"
   }
 }
