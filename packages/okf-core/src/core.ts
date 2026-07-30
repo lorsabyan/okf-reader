@@ -25,10 +25,28 @@ const LINK_RE = /(!?)\[[^\]]*\]\(\s*(?:<([^>]*)>|([^\s()]*))(?:\s+(?:"[^"]*"|'[^
 
 const SCHEME_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
 
-/** Extract raw markdown link targets (e.g. "tables/orders.md") from a concept body. */
+// Fenced code blocks, stripped before link extraction. A link inside a fence is
+// an *example*, not a citation — and documenting OKF in OKF means writing whole
+// example concept docs inside fences, so every cross-link in them would
+// otherwise be reported broken.
+//
+// Indentation is tolerated on both sides: a fence inside a list item is
+// indented, and the closing fence need not share the opening indent. An
+// unclosed fence matches nothing by design, so a stray backtick run cannot
+// swallow the rest of the document.
+const FENCED_BLOCK_RE = /^[ \t]*(`{3,}|~{3,}).*?^[ \t]*\1`*[ \t]*$/gms;
+
+/**
+ * Extract raw markdown link targets (e.g. "tables/orders.md") from a concept body.
+ *
+ * Fenced code is excluded. Inline code spans and indented (four-space) code
+ * blocks are not — a link inside those is still counted, which is a known and
+ * deliberate limit rather than an oversight.
+ */
 export function extractLinkTargets(body: string): string[] {
   const targets: string[] = [];
-  for (const m of body.matchAll(LINK_RE)) {
+  const prose = body.replace(FENCED_BLOCK_RE, '');
+  for (const m of prose.matchAll(LINK_RE)) {
     if (m[1] === '!') continue; // image, not a concept link
     const raw = m[2] ?? m[3] ?? '';
     if (!raw) continue;

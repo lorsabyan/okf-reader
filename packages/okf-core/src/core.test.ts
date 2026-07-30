@@ -230,3 +230,39 @@ describe('buildBundle v0.2 provenance, trust, and lifecycle', () => {
     expect(c.status).toBe('stable');
   });
 });
+
+describe('extractLinkTargets ignores fenced code', () => {
+  test('a link inside a plain fence is not a target', () => {
+    expect(extractLinkTargets('```sql\nSELECT * FROM [x](gone.md);\n```\n')).toEqual([]);
+  });
+
+  test('a link inside a fence indented in a list item is not a target', () => {
+    // The case from okf-reader#8: documenting OKF in OKF puts example concept
+    // docs inside fences, and those are indented when nested in a numbered list.
+    const body = '1. Run this:\n\n   ```sql\n   SELECT * FROM [x](gone.md);\n   ```\n';
+    expect(extractLinkTargets(body)).toEqual([]);
+  });
+
+  test('prose links around a fence still count', () => {
+    const body = 'See [a](a.md).\n\n```\n[b](b.md)\n```\n\nAnd [c](c.md).\n';
+    expect(extractLinkTargets(body)).toEqual(['a.md', 'c.md']);
+  });
+
+  test('tilde fences are stripped too', () => {
+    expect(extractLinkTargets('~~~\n[x](gone.md)\n~~~\n')).toEqual([]);
+  });
+
+  test('a four-backtick fence wrapping a three-backtick one is stripped whole', () => {
+    const body = '````markdown\n---\ntype: Metric\n---\n\nSee [x](gone.md).\n\n```sql\nSELECT 1\n```\n````\n';
+    expect(extractLinkTargets(body)).toEqual([]);
+  });
+
+  test('an unclosed fence does not swallow the rest of the document', () => {
+    // Otherwise a stray backtick run would silently drop every later link.
+    expect(extractLinkTargets('```\nunclosed\n\nSee [a](a.md).\n')).toEqual(['a.md']);
+  });
+
+  test('a closing fence need not share the opening indent', () => {
+    expect(extractLinkTargets('   ```\n[x](gone.md)\n```\n')).toEqual([]);
+  });
+});
