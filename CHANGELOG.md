@@ -19,6 +19,16 @@ decisions taken.
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-07-30
+
+No functional change. `@lorsabyan/okf-core` only.
+
+Published from CI via OIDC trusted publishing, to verify that path end to end
+and attach a provenance attestation — `0.2.0` was published by hand and carries
+none. The trusted-publisher config cannot be tested any other way: a dry run
+never requests an OIDC token, and npm exposes no endpoint for validating one, so
+the first real proof is a real publish.
+
 ## [0.2.0] — 2026-07-30
 
 Reads **OKF v0.2**. Plans [013–017](plans/README.md).
@@ -100,6 +110,7 @@ search, bundle health, and a runtime viewer that opens a local directory or a
 public GitHub repo in-browser. `@lorsabyan/okf-core` extracted as a workspace package with
 the `okf-validate` CLI. Plans [001–012](plans/README.md).
 
-[Unreleased]: https://github.com/lorsabyan/okf-reader/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/lorsabyan/okf-reader/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/lorsabyan/okf-reader/releases/tag/v0.2.1
 [0.2.0]: https://github.com/lorsabyan/okf-reader/releases/tag/v0.2.0
 [0.1.0]: https://github.com/lorsabyan/okf-reader/releases/tag/v0.1.0
