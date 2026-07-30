@@ -108,6 +108,38 @@ and deleted the tour the reader demos. `generated.by` reads
 producer and upstream's history has none either; that missing field is exactly
 what v0.2 added `generated` to fix.
 
+### A second bundle for the v0.2 trust features
+
+`example-bundle-acme-retail/` is upstream's Acme Retail bundle, vendored
+**byte-identical** at commit
+[`3fcbb9f`](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/3fcbb9f/okf/bundles/acme_retail)
+(Copyright Google LLC, Apache 2.0), minus its `viz.html`.
+
+The GA4 bundle cannot demonstrate OKF v0.2's trust and lifecycle features,
+because none of them are true of it — nobody verified that content and nothing
+in it is deprecated or expiring, and inventing those signals would put
+fabricated provenance inside a provenance format. Acme Retail carries them
+honestly:
+
+| | GA4 | Acme Retail |
+|---|---|---|
+| `verified` | 0 docs | 8 docs (9 human verifiers) |
+| `stale_after` | 0 docs | 7 docs |
+| `status: deprecated` | 0 docs | 1 doc |
+| `type: Attested Computation` | 0 docs | 2 docs |
+| `sources` | 11 docs | 5 docs |
+
+Point the reader at it to see trust tiers, deprecation, staleness, provenance,
+and computation contracts rendered:
+
+```sh
+OKF_BUNDLE=example-bundle-acme-retail OKF_BUNDLE_NAME="Acme Retail" bun run dev
+```
+
+It is not the default demo and is not used by the tests or screenshots — the
+reader builds one bundle at a time, and `example-bundle/` remains the one it
+ships with.
+
 Note: both the baked (SSG) mode and the runtime viewer (`/open/`) sanitize
 rendered HTML via the same unified/rehype pipeline (`rehype-sanitize`, a
 GitHub-style allowlist extended for cross-link classes, heading anchor ids,

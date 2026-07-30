@@ -102,6 +102,9 @@ rejected. Screenshots regenerated.
 
 - Re-vendoring upstream's current GA4 bundle. Rejected above; it would delete
   the tour and swap all content.
-- A second demo bundle. `acme_retail` upstream is the one that exercises
-  `verified`, `deprecated`, `stale_after`, and Attested Computations — worth
-  considering if the demo should showcase those without fabricating them here.
+- ~~A second demo bundle.~~ **Done in the same batch**: `example-bundle-acme-retail/`
+  vendors upstream's Acme Retail byte-identical at `3fcbb9f`. It carries
+  `verified` (8 docs), `stale_after` (7), `status: deprecated` (1), and two
+  Attested Computations — the trust features GA4 cannot demonstrate without
+  fabricating them. It is not the default demo and is not used by tests or
+  screenshots; the reader builds one bundle at a time.
