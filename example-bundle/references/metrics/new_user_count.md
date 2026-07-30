@@ -6,7 +6,12 @@ description: The number of unique users who triggered a first_visit or first_ope
   event.
 tags:
 - metric
-timestamp: '2026-05-28T22:51:38+00:00'
+generated:
+  by: reference_agent/unknown
+  at: '2026-05-28T22:51:38+00:00'
+sources:
+- id: bigquery-basic-queries
+  resource: https://developers.google.com/analytics/bigquery/basic-queries
 ---
 
 The number of unique users who triggered a `first_visit` or `first_open` event.
@@ -15,6 +20,3 @@ The number of unique users who triggered a `first_visit` or `first_open` event.
 SUM(is_new_user)
 -- where is_new_user is MAX(IF(event_name IN ('first_visit', 'first_open'), 1, 0)) grouped by user_pseudo_id
 ```
-
-# Citations
-- https://developers.google.com/analytics/bigquery/basic-queries

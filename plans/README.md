@@ -31,7 +31,7 @@ source.
 | [014](014-health-and-validate-v02.md) | Health + `okf-validate`: spec-driven staleness, stop demanding `timestamp` | HIGH | DONE | 013 |
 | [015](015-surface-trust-and-freshness.md) | Surface trust, status, and freshness in the reader UI | HIGH | DONE | 013, 014 |
 | [016](016-attested-computation.md) | Render `Attested Computation` concepts | MED | DONE | 013 |
-| [017](017-revendor-example-bundle.md) | Re-vendor `example-bundle/` at OKF v0.2 | MED | TODO | 013–015 |
+| [017](017-revendor-example-bundle.md) | Migrate `example-bundle/` to OKF v0.2 in place (re-vendor rejected — see plan) | MED | DONE | 013–015 |
 
 ## Execution order (batch 2)
 
@@ -51,8 +51,9 @@ source.
    the computation contract and its component.
 3. **015 after 014** — it renders the health fields 014 defines. Requires a **browser pass**
    (desktop + 375px, light + dark) like batch 3, not just typecheck/tests.
-4. **017 last** — re-vendoring the demo bundle changes screenshots and e2e fixtures, so it wants
-   the UI settled first.
+4. **017 last** — the demo bundle's migration changes screenshots, so it wants the UI settled
+   first. Note its premise was corrected at execution time: upstream rewrote its own GA4 bundle
+   during its v0.2 migration, so re-vendoring was rejected in favour of an in-place migration.
 5. Full gate after each: `bun run typecheck && bun test && bun run build && bun run e2e`.
 
 Verify against a real v0.2 bundle throughout, not just `example-bundle/` — it stays v0.1 until 017:
