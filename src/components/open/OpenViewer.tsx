@@ -54,7 +54,7 @@ import { prevNextInGroup } from '@/lib/prev-next';
 import { PROSE_CLASS } from '@/lib/prose';
 import { cachedCompute } from '@/lib/render-cache';
 import { isSafeResourceUrl } from '@/lib/resource-url';
-import { buildBundleIndex, searchBundle, type BundleIndex } from '@/lib/search-bundle';
+import { buildBundleIndex, searchBundle, type BundleIndex } from '@lorsabyan/okf-core';
 import {
   deleteRecent,
   getRecents,

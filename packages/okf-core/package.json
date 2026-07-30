@@ -1,6 +1,6 @@
 {
   "name": "@lorsabyan/okf-core",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "license": "Apache-2.0",
   "description": "Source-agnostic model + validator for Open Knowledge Format (OKF) bundles.",
@@ -21,6 +21,11 @@
       "types": "./dist/validate.d.ts",
       "bun": "./src/validate.ts",
       "default": "./dist/validate.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "bun": "./src/node.ts",
+      "default": "./dist/node.js"
     }
   },
   "bin": {

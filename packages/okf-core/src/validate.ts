@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { readBundleFiles } from './node.ts';
 import { buildBundle, parseFrontmatter, RESERVED, type CoreBundle } from './core.ts';
 import { analyzeBundle } from './health.ts';
 
@@ -23,19 +24,6 @@ import { analyzeBundle } from './health.ts';
 // Mirrors the Python validator's ISO-8601-ish shape check: a leading YYYY-MM-DD.
 const TIMESTAMP_SHAPE_RE = /^\d{4}-\d{2}-\d{2}/;
 
-/** Recursively collect `.md` files under `dir`, keyed by path relative to `root` (posix separators). */
-export function walk(dir: string, root: string, acc: Map<string, string> = new Map()): Map<string, string> {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.')) continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, root, acc);
-    else if (entry.name.endsWith('.md')) {
-      const rel = path.relative(root, full).split(path.sep).join('/');
-      acc.set(rel, fs.readFileSync(full, 'utf-8'));
-    }
-  }
-  return acc;
-}
 
 /** True when `data.type` is missing, non-string, or blank/whitespace-only. */
 function hasMissingOrEmptyType(data: Record<string, unknown>): boolean {
@@ -64,7 +52,7 @@ export interface ValidationResult {
 export function validateBundle(dir: string): ValidationResult {
   const resolved = path.resolve(dir);
   const name = path.basename(resolved);
-  const files = walk(resolved, resolved);
+  const files = readBundleFiles(resolved);
   const bundle = buildBundle(files, name);
 
   const errors: string[] = [];

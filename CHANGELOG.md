@@ -19,6 +19,42 @@ decisions taken.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-07-30
+
+`@lorsabyan/okf-core` only. Settles the 0.x surface while the package still has
+zero installs — plan [018](plans/018-settle-core-api.md).
+
+### Added
+
+- **`@lorsabyan/okf-core/node`** — a Node-only subpath exporting
+  `loadBundleFromDir(dir, name?)` and `readBundleFiles(dir)`. Separate from
+  `./validate` because loading is not validating.
+- **`bundleToJSON` / `bundleFromJSON`** — `CoreBundle` holds `Map`s, which
+  `JSON.stringify` silently turns into `{}`. Any consumer behind a JSON-RPC or
+  HTTP boundary hit this immediately.
+- **`searchBundle` / `buildBundleIndex`** moved into core from the reader app.
+  Generic, synchronous, bundle-model-only — an external consumer previously had
+  to vendor the file.
+
+### Removed
+
+- **BREAKING: `walk()` is no longer exported** from `./validate`. It was public
+  only because tests reached for it, and the same function was duplicated
+  privately in the app. Use `readBundleFiles` from `./node`.
+
+### Notes
+
+The `Map`s stay. Plan 009 framed this as "plain objects vs `Map`, decide before
+1.0"; converting is the wrong half of that choice, since `byId.get(id)` is the
+hot path for every in-memory consumer. The defect was that there was no way
+*out* of the representation, which is what the serializers provide.
+
+Widening `Concept.resource` to an array was **rejected**, with the reason
+recorded in plan 018: spec §4.1 defines it as a URI that *uniquely identifies*
+the asset, and across all four upstream reference bundles there are 47
+`resource:` lines and zero plural forms. A concept relating to several artifacts
+already has `sources`, which is a list.
+
 ## [0.2.1] — 2026-07-30
 
 No functional change. `@lorsabyan/okf-core` only.
@@ -110,7 +146,8 @@ search, bundle health, and a runtime viewer that opens a local directory or a
 public GitHub repo in-browser. `@lorsabyan/okf-core` extracted as a workspace package with
 the `okf-validate` CLI. Plans [001–012](plans/README.md).
 
-[Unreleased]: https://github.com/lorsabyan/okf-reader/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/lorsabyan/okf-reader/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/lorsabyan/okf-reader/releases/tag/v0.3.0
 [0.2.1]: https://github.com/lorsabyan/okf-reader/releases/tag/v0.2.1
 [0.2.0]: https://github.com/lorsabyan/okf-reader/releases/tag/v0.2.0
 [0.1.0]: https://github.com/lorsabyan/okf-reader/releases/tag/v0.1.0
