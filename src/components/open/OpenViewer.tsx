@@ -24,6 +24,8 @@ import TourSection from '@/components/tour/TourSection';
 import TourView from '@/components/tour/TourView';
 import ViewerErrorBoundary from '@/components/open/ViewerErrorBoundary';
 import { Badge } from '@/components/ui/badge';
+import ConceptMeta from '@/components/ConceptMeta';
+import Provenance from '@/components/Provenance';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -149,7 +151,7 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
           title: concept.title,
           type: concept.type,
           description: concept.description,
-          timestamp: concept.timestamp,
+          timestamp: concept.updatedAt,
           tags: concept.tags,
         }}
         introHtml={rendered.html}
@@ -163,17 +165,7 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
     <div className="flex gap-8">
       <article className="min-w-0 max-w-3xl flex-1">
         <Breadcrumbs id={concept.id} title={concept.title} homeHref="#/" />
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <Badge>{concept.type}</Badge>
-          {concept.timestamp && (
-            <time className="text-sm text-muted-foreground">{concept.timestamp.slice(0, 10)}</time>
-          )}
-          {concept.tags.map((t) => (
-            <Badge key={t} variant="outline">
-              {t}
-            </Badge>
-          ))}
-        </div>
+        <ConceptMeta concept={concept} />
         <h1 className="mt-3 text-3xl font-bold tracking-tight">{concept.title}</h1>
         {concept.description && <p className="mt-2 text-lg text-muted-foreground">{concept.description}</p>}
         {concept.resource && (
@@ -194,6 +186,8 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
           </p>
         )}
         <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: rendered.html }} />
+
+        <Provenance sources={concept.sources} />
         <Neighborhood
           center={{ id: concept.id, title: concept.title }}
           inbound={inbound.map(({ id, title }) => ({ id, title }))}
@@ -238,8 +232,8 @@ function HomeView({ bundle }: { bundle: CoreBundle }) {
   const recent = useMemo(
     () =>
       bundle.concepts
-        .filter((c) => c.timestamp)
-        .sort((a, b) => (b.timestamp! < a.timestamp! ? -1 : 1))
+        .filter((c) => c.updatedAt)
+        .sort((a, b) => (b.updatedAt! < a.updatedAt! ? -1 : 1))
         .slice(0, 8),
     [bundle],
   );
@@ -274,7 +268,7 @@ function HomeView({ bundle }: { bundle: CoreBundle }) {
                   {c.title}
                 </a>
                 <span className="text-muted-foreground"> — {c.description || c.type}</span>{' '}
-                <time className="text-muted-foreground">({c.timestamp!.slice(0, 10)})</time>
+                <time className="text-muted-foreground">({c.updatedAt!.slice(0, 10)})</time>
               </li>
             ))}
           </ul>

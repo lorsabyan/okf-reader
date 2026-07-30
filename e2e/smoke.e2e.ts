@@ -60,6 +60,8 @@ test('health page renders every category heading', async ({ page }) => {
     'Stale concepts (past stale_after)',
     'Aging concepts (not updated in over a year)',
     'Undated concepts',
+    'Deprecated concepts',
+    'Unverified concepts (no recorded verification)',
     'Orphans (no inbound or outbound links)',
   ]) {
     await expect(page.getByRole('heading', { level: 2, name: heading })).toBeVisible();

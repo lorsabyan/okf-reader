@@ -1,6 +1,6 @@
 # 015 — Surface trust, status, and freshness in the reader UI
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 4ae3ca5 (all excerpts verified against the tree)
 - **Severity**: HIGH (v0.2 bundles render undated, with an empty landing page)
 - **Category**: UI / spec conformance

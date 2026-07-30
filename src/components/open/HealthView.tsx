@@ -66,6 +66,12 @@ export default function HealthView({ bundle }: { bundle: CoreBundle }) {
         <Badge variant={report.undated.length ? 'warning' : 'outline'}>
           Undated <span className="ml-1 font-bold">{report.undated.length}</span>
         </Badge>
+        <Badge variant={report.deprecated.length ? 'warning' : 'outline'}>
+          Deprecated <span className="ml-1 font-bold">{report.deprecated.length}</span>
+        </Badge>
+        <Badge variant="outline">
+          Unverified <span className="ml-1 font-bold">{report.unverified.length}</span>
+        </Badge>
         <Badge variant={report.orphans.length ? 'warning' : 'outline'}>
           Orphans <span className="ml-1 font-bold">{report.orphans.length}</span>
         </Badge>
@@ -124,6 +130,26 @@ export default function HealthView({ bundle }: { bundle: CoreBundle }) {
       <Section title="Undated concepts" count={report.undated.length}>
         <ul className="space-y-2">
           {report.undated.map((id) => (
+            <li key={id} className="text-sm leading-relaxed">
+              <ConceptLink bundle={bundle} id={id} />
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section title="Deprecated concepts" count={report.deprecated.length}>
+        <ul className="space-y-2">
+          {report.deprecated.map((id) => (
+            <li key={id} className="text-sm leading-relaxed">
+              <ConceptLink bundle={bundle} id={id} />
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section title="Unverified concepts (no recorded verification)" count={report.unverified.length}>
+        <ul className="space-y-2">
+          {report.unverified.map((id) => (
             <li key={id} className="text-sm leading-relaxed">
               <ConceptLink bundle={bundle} id={id} />
             </li>
