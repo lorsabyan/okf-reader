@@ -31,13 +31,18 @@ updates:
       dev-tooling:
         patterns: ["@playwright/test", "@types/*", "typescript", "pagefind", "shadcn"]
     ignore:
-      # TypeScript 7 fails the typecheck with 26 errors — `bun:test`, the `Bun`
-      # global, and `ImportMeta.dir` all go unresolved because @types/bun is not
-      # yet TS 7-compatible. Bisected: TS 7 breaks with old node types too, and
-      # @types/node 26 is clean on TS 5.9. Drop this ignore once @types/bun
-      # supports TS 7.
+      # TypeScript >= 6 fails the typecheck with 26 errors — `bun:test`, the
+      # `Bun` global, and `ImportMeta.dir` all go unresolved because @types/bun
+      # is not compatible past TS 5. Measured, not assumed: 6.0.3 and 7.0.2 both
+      # give exactly 26 errors of the same three kinds, while 5.9.3 gives none;
+      # and TS 7 still fails with @types/node pinned back to 22, so the node
+      # types are not the cause.
+      #
+      # This originally read `7.x`, which was too narrow — Dependabot promptly
+      # proposed 6.0.3 (PR #5) and CI failed the same way. Drop the whole ignore
+      # once @types/bun supports TS 6+.
       - dependency-name: "typescript"
-        versions: ["7.x"]
+        versions: [">=6"]
 
   - package-ecosystem: "bun"
     directory: "/packages/okf-core"
