@@ -1,4 +1,4 @@
-name: Publish @okf/core
+name: Publish @lorsabyan/okf-core
 
 # Publishes packages/okf-core to npm using GitHub OIDC trusted publishing —
 # no long-lived npm token is stored in this repo, and npm generates provenance
@@ -16,7 +16,7 @@ name: Publish @okf/core
 #    the publish fails without it.
 #
 # 2. Then configure the trusted publisher at
-#    npmjs.com → @okf/core → Settings → Trusted Publisher:
+#    npmjs.com → @lorsabyan/okf-core → Settings → Trusted Publisher:
 #      organization/user : lorsabyan
 #      repository        : okf-reader
 #      workflow filename : publish.yml
@@ -83,7 +83,7 @@ jobs:
           pkg=$(node -p "require('./packages/okf-core/package.json').version")
           echo "tag=$tag package=$pkg"
           [ "$tag" = "$pkg" ] || {
-            echo "::error::release tag v$tag does not match @okf/core $pkg — bump the manifest or retag"
+            echo "::error::release tag v$tag does not match @lorsabyan/okf-core $pkg — bump the manifest or retag"
             exit 1
           }
 

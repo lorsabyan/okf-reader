@@ -6,7 +6,7 @@
  * it is written. Absence carries meaning here — a concept with no `verified` is
  * distinguishable from a verified one, but is never invalid.
  *
- * Browser-safe (no node imports), per the @okf/core rules in CLAUDE.md.
+ * Browser-safe (no node imports), per the @lorsabyan/okf-core rules in CLAUDE.md.
  */
 
 /** An identity recorded against a concept: `generated.by`, `verified[].by`. */

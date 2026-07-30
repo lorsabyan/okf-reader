@@ -15,7 +15,7 @@ import { analyzeBundle } from './health.ts';
  *     descriptions, untyped, stale, undated, orphans) -> warnings
  *
  * This module is Node-only and is NOT re-exported from `./index.ts` (which
- * must stay importable in the browser); it is exposed as the `@okf/core/validate`
+ * must stay importable in the browser); it is exposed as the `@lorsabyan/okf-core/validate`
  * package subpath instead. `cli.ts` is a thin wrapper around `validateBundle`
  * that only handles argv parsing, printing, and the process exit code.
  */

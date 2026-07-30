@@ -12,7 +12,7 @@ bunx playwright install chromium     # once, for the e2e suite
 ```sh
 bun run dev            # app at http://localhost:3000
 bun run typecheck       # tsc --noEmit
-bun test                # unit tests (app + @okf/core)
+bun test                # unit tests (app + @lorsabyan/okf-core)
 bun run build            # static export to out/ (+ pagefind index)
 bun run e2e              # Playwright smoke suite against out/ — build first
 bun run screenshots       # regenerate docs/*.png used in the README
@@ -26,7 +26,7 @@ bun run typecheck && bun test && bun run build && bun run e2e
 
 ## Pull requests
 
-- Match existing code style; keep `@okf/core`'s `index.ts` (and everything it
+- Match existing code style; keep `@lorsabyan/okf-core`'s `index.ts` (and everything it
   re-exports) browser-safe — `node:*` imports only in `src/cli.ts` and
   `src/validate.ts`.
 - Add or update unit tests for `src/` and `packages/okf-core/src` changes,

@@ -17,7 +17,7 @@ import TourView from '@/components/tour/TourView';
 import { prevNextInGroup } from '@/lib/prev-next';
 import { PROSE_CLASS } from '@/lib/prose';
 import { isSafeResourceUrl } from '@/lib/resource-url';
-import { isTour, resolveTourSteps, toursForStep } from '@okf/core';
+import { isTour, resolveTourSteps, toursForStep } from '@lorsabyan/okf-core';
 
 export const dynamicParams = false;
 

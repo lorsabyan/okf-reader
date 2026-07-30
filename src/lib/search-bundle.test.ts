@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import type { Concept } from '@okf/core';
+import type { Concept } from '@lorsabyan/okf-core';
 import { buildBundleIndex, searchBundle } from './search-bundle';
 
 function concept(overrides: Partial<Concept> & Pick<Concept, 'id'>): Concept {

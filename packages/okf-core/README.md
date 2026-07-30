@@ -1,4 +1,4 @@
-# @okf/core
+# @lorsabyan/okf-core
 
 Source-agnostic model and validator for [Open Knowledge Format](https://github.com/lorsabyan/okf-skill) (OKF)
 bundles — directories of markdown files with YAML frontmatter that describe datasets, tables, metrics, APIs,
@@ -6,11 +6,11 @@ playbooks, and other concepts.
 
 The package has two parts:
 
-- **A browser-safe bundle model** (`@okf/core`): parses frontmatter, resolves links between concept docs,
+- **A browser-safe bundle model** (`@lorsabyan/okf-core`): parses frontmatter, resolves links between concept docs,
   and reports documentation-health issues (broken links, missing descriptions, untyped/stale/undated docs,
   orphans). No `fs`, no `node:path` — safe to import from both build-time scripts and a runtime viewer in
   the browser.
-- **A Node-only validator CLI** (`@okf/core/validate` + the `okf-validate` bin): walks a bundle directory on
+- **A Node-only validator CLI** (`@lorsabyan/okf-core/validate` + the `okf-validate` bin): walks a bundle directory on
   disk and checks it against the OKF **v0.2** spec.
 
 ### On the Python validator
@@ -36,14 +36,14 @@ Clean pass is the number that is comparable across tools, and both are at 10/10.
 ## Install
 
 ```sh
-npm install @okf/core
-# or: bun add @okf/core / pnpm add @okf/core
+npm install @lorsabyan/okf-core
+# or: bun add @lorsabyan/okf-core / pnpm add @lorsabyan/okf-core
 ```
 
 ## API usage
 
 ```ts
-import { buildBundle, analyzeBundle, navGroups } from '@okf/core';
+import { buildBundle, analyzeBundle, navGroups } from '@lorsabyan/okf-core';
 
 // `files` is a Map of bundle-relative posix paths to raw markdown contents,
 // e.g. collected from disk, a git tree, or fetched over HTTP.
@@ -59,7 +59,7 @@ For the Node-only validator, import the `./validate` subpath (kept separate so t
 browser-safe):
 
 ```ts
-import { validateBundle } from '@okf/core/validate';
+import { validateBundle } from '@lorsabyan/okf-core/validate';
 
 const { errors, warnings } = validateBundle('./my-bundle');
 ```

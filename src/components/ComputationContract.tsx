@@ -1,5 +1,5 @@
 import { FileCode } from 'lucide-react';
-import type { Computation } from '@okf/core';
+import type { Computation } from '@lorsabyan/okf-core';
 import { Badge } from '@/components/ui/badge';
 
 /**

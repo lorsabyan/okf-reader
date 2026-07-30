@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import type { Source } from '@okf/core';
+import type { Source } from '@lorsabyan/okf-core';
 import { isSafeResourceUrl } from '@/lib/resource-url';
 
 /**

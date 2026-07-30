@@ -1,4 +1,4 @@
-import type { TourSummary } from '@okf/core';
+import type { TourSummary } from '@lorsabyan/okf-core';
 import TourCard from './TourCard';
 
 /**

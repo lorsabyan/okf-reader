@@ -20,7 +20,7 @@
     "screenshots": "bun scripts/screenshots.ts"
   },
   "dependencies": {
-    "@okf/core": "workspace:*",
+    "@lorsabyan/okf-core": "workspace:*",
     "@shikijs/rehype": "4.3.1",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",

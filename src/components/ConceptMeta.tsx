@@ -1,4 +1,4 @@
-import { staleSince, trustTier, lastVerifiedAt, type Concept } from '@okf/core';
+import { staleSince, trustTier, lastVerifiedAt, type Concept } from '@lorsabyan/okf-core';
 import { Badge } from '@/components/ui/badge';
 
 /**

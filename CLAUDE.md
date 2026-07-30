@@ -10,7 +10,7 @@ bundles: sidebar navigation, concept pages, cross-links, backlinks, and
 guided tours over a directory of markdown + frontmatter. It's a Bun
 workspace — the reader app lives at the root, and the source-agnostic
 bundle model + `okf-validate` CLI live in `packages/okf-core` as the
-`@okf/core` package.
+`@lorsabyan/okf-core` package.
 
 ## Commands
 
@@ -39,7 +39,7 @@ misnamed Playwright spec gets swept into the unit-test run and fails there
 instead of under `playwright test`. See `playwright.config.ts`
 (`testMatch: /.*\.e2e\.ts/`).
 
-## @okf/core rules
+## @lorsabyan/okf-core rules
 
 `packages/okf-core/src/index.ts` and everything it re-exports (`core.ts`,
 `trust.ts`, `computation.ts`, `tours.ts`, `health.ts`, `detect-root.ts`) must
@@ -47,7 +47,7 @@ stay browser-safe — no `node:*` imports. It's consumed directly by the
 client-side runtime viewer.
 
 `node:*` imports are allowed only in `src/cli.ts` and `src/validate.ts`,
-exposed as the separate `@okf/core/validate` subpath — never re-exported
+exposed as the separate `@lorsabyan/okf-core/validate` subpath — never re-exported
 from `index.ts`.
 
 The package builds to `packages/okf-core/dist/` (gitignored) via the root

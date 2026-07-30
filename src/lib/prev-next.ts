@@ -1,4 +1,4 @@
-import { navGroups, type CoreBundle } from '@okf/core';
+import { navGroups, type CoreBundle } from '@lorsabyan/okf-core';
 
 /**
  * Prev/next concept within the same sidebar group (top-level directory),

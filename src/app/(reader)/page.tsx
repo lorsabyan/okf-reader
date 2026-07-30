@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import TourSection from '@/components/tour/TourSection';
 import { loadBundle } from '@/lib/bundle';
-import { parseFrontmatter, getTourSummaries } from '@okf/core';
+import { parseFrontmatter, getTourSummaries } from '@lorsabyan/okf-core';
 import { renderMarkdownWithHighlight } from '@/lib/markdown-highlight';
 import { PROSE_CLASS } from '@/lib/prose';
 

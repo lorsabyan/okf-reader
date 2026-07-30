@@ -151,7 +151,7 @@ anymore.
 
 This repo is a Bun workspace: the reader app lives at the root, and the
 source-agnostic bundle model + validator CLI live in
-[`packages/okf-core`](packages/okf-core) as the `@okf/core` package.
+[`packages/okf-core`](packages/okf-core) as the `@lorsabyan/okf-core` package.
 
 ```sh
 bun install                 # installs the whole workspace
@@ -162,7 +162,7 @@ bun run e2e                 # Playwright smoke suite against out/ (build first)
 bun run screenshots         # regenerate the README screenshots into docs/
 ```
 
-`@okf/core` also ships `okf-validate`, a v0.2 conformance checker for a
+`@lorsabyan/okf-core` also ships `okf-validate`, a v0.2 conformance checker for a
 bundle directory (mirrors the reference Python validator in
 [okf-skill](https://github.com/lorsabyan/okf-skill)):
 
@@ -178,7 +178,7 @@ Releases are tagged and documented in [CHANGELOG.md](CHANGELOG.md); the
 per-batch detail and the reasoning behind each decision live in
 [plans/](plans/README.md).
 
-`@okf/core` is versioned in lockstep with the app and is not yet published to
+`@lorsabyan/okf-core` is versioned in lockstep with the app and is not yet published to
 npm. While it is `0.x`, a minor bump may carry breaking API changes — `0.2.0`
 does: `HealthReport.stale` changed shape and meaning, and `Concept` gained
 non-optional `verified`, `status`, and `sources`.
@@ -186,7 +186,7 @@ non-optional `verified`, `status`, and `sources`.
 The version tracks this repo, not the format. They line up at `0.2.x` only
 because that release added OKF v0.2 support.
 
-## Publishing `@okf/core`
+## Publishing `@lorsabyan/okf-core`
 
 `.github/workflows/publish.yml` publishes the package on a **published GitHub
 release**, using OIDC trusted publishing — no npm token is stored in this repo,
@@ -200,7 +200,7 @@ cd packages/okf-core && npm publish --access public
 ```
 
 `--access public` is required — a scoped package defaults to private. Then set
-the trusted publisher at npmjs.com → `@okf/core` → Settings → Trusted Publisher
+the trusted publisher at npmjs.com → `@lorsabyan/okf-core` → Settings → Trusted Publisher
 (`lorsabyan` / `okf-reader` / `publish.yml`), and every release after that
 publishes from CI.
 
