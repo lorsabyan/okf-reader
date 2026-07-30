@@ -1,0 +1,113 @@
+name: Publish @okf/core
+
+# Publishes packages/okf-core to npm using GitHub OIDC trusted publishing —
+# no long-lived npm token is stored in this repo, and npm generates provenance
+# attestations automatically.
+#
+# ── Before this can work ────────────────────────────────────────────────────
+#
+# 1. The package must ALREADY EXIST on npm. npm's trusted-publisher config is
+#    attached to an existing package, so the *first* publish has to be done by
+#    hand:
+#
+#        cd packages/okf-core && npm publish --access public
+#
+#    `--access public` is required — a scoped package defaults to private and
+#    the publish fails without it.
+#
+# 2. Then configure the trusted publisher at
+#    npmjs.com → @okf/core → Settings → Trusted Publisher:
+#      organization/user : lorsabyan
+#      repository        : okf-reader
+#      workflow filename : publish.yml
+#
+# After that, every subsequent release publishes from CI with no token.
+#
+# ── Requirements this workflow satisfies ────────────────────────────────────
+#
+# npm CLI >= 11.5.1 and Node >= 22.14.0 are required for OIDC; Node 24 ships a
+# new enough npm. Bun is also installed because the package's `prepack` script
+# is `bun run build`, and because the workspace lockfile is bun.lock (there is
+# no package-lock.json, so `npm ci` would fail here).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Pack and verify without publishing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Verify npm is new enough for OIDC
+        run: |
+          version=$(npm --version)
+          echo "npm $version"
+          # 11.5.1 is the inclusive floor for trusted publishing. Sort both and
+          # require the floor to be the smaller — `sort -C` on the pair is the
+          # obvious spelling and is inverted at the boundary, silently letting
+          # an older npm through.
+          [ "$(printf '%s\n11.5.1\n' "$version" | sort -V | head -1)" = "11.5.1" ] || {
+            echo "::error::npm $version is older than the 11.5.1 required for OIDC trusted publishing"
+            exit 1
+          }
+
+      - run: bun install --frozen-lockfile
+
+      - name: Tag must match the package version
+        if: github.event_name == 'release'
+        run: |
+          # Otherwise a v0.3.0 release quietly publishes whatever version the
+          # manifest happens to hold.
+          tag="${GITHUB_REF_NAME#v}"
+          pkg=$(node -p "require('./packages/okf-core/package.json').version")
+          echo "tag=$tag package=$pkg"
+          [ "$tag" = "$pkg" ] || {
+            echo "::error::release tag v$tag does not match @okf/core $pkg — bump the manifest or retag"
+            exit 1
+          }
+
+      - name: Gate — never publish code that does not pass
+        run: |
+          bun run typecheck
+          bun test
+
+      - name: Verify the tarball
+        working-directory: packages/okf-core
+        run: |
+          npm pack --dry-run
+          # The README ships to the registry; a stale spec version in it is a
+          # public claim, so fail rather than publish one.
+          grep -q 'OKF \*\*v0.2\*\*\|OKF v0.2' README.md || {
+            echo "::error::packages/okf-core/README.md does not mention the current spec version"
+            exit 1
+          }
+
+      - name: Publish
+        if: github.event_name == 'release' || inputs.dry_run == false
+        working-directory: packages/okf-core
+        run: npm publish --access public
+
+      - name: Dry run only
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: echo "Dry run — tarball verified, nothing published."

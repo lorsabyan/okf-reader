@@ -186,6 +186,29 @@ non-optional `verified`, `status`, and `sources`.
 The version tracks this repo, not the format. They line up at `0.2.x` only
 because that release added OKF v0.2 support.
 
+## Publishing `@okf/core`
+
+`.github/workflows/publish.yml` publishes the package on a **published GitHub
+release**, using OIDC trusted publishing — no npm token is stored in this repo,
+and npm generates provenance attestations automatically.
+
+It is not yet armed. npm attaches a trusted-publisher config to an **existing**
+package, so the first publish has to be done by hand:
+
+```sh
+cd packages/okf-core && npm publish --access public
+```
+
+`--access public` is required — a scoped package defaults to private. Then set
+the trusted publisher at npmjs.com → `@okf/core` → Settings → Trusted Publisher
+(`lorsabyan` / `okf-reader` / `publish.yml`), and every release after that
+publishes from CI.
+
+The workflow refuses to publish unless the release tag matches the manifest
+version, `bun run typecheck` and the tests pass, and the shipped README names
+the current spec version. `workflow_dispatch` runs a pack-and-verify dry run by
+default.
+
 ## License
 
 Apache 2.0.
