@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { conceptHref } from '@/lib/paths';
 import { PROSE_CLASS } from '@/lib/prose';
 import { getTourProgress, setActiveTour } from '@/lib/tour-progress';
-import { firstUnvisitedStep, tourButtonLabel, tourProgressKey, type TourStepInfo } from '@okf/core';
+import { firstUnvisitedStep, tourButtonLabel, tourProgressKey, type TourStepInfo } from '@lorsabyan/okf-core';
 
 export interface TourViewTour {
   id: string;

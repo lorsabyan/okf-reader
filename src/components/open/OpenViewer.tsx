@@ -47,7 +47,7 @@ import {
   type Concept,
   type CoreBundle,
   type DetectedRoot,
-} from '@okf/core';
+} from '@lorsabyan/okf-core';
 import { loadHandle, saveHandle, deleteHandle, listHandleKeys } from '@/lib/idb-handles';
 import { renderMarkdown } from '@/lib/markdown';
 import { prevNextInGroup } from '@/lib/prev-next';
@@ -67,7 +67,7 @@ import {
 } from '@/lib/recents';
 import { fetchGithubBundle, formatGithubRef, parseGithubUrl, type GithubRef } from '@/lib/sources/github';
 import { pickDirectory, readFileList, reopenDirectory, supportsDirectoryPicker, type DirHandle } from '@/lib/sources/local';
-import { getTourSummaries, isTour, resolveTourSteps, toursForStep } from '@okf/core';
+import { getTourSummaries, isTour, resolveTourSteps, toursForStep } from '@lorsabyan/okf-core';
 import { cn } from '@/lib/utils';
 
 const hashHref = (id: string) => `#/${id}`;

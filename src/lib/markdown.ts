@@ -6,7 +6,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import rehypeSanitize, { defaultSchema, type Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeStringify from 'rehype-stringify';
-import { isReservedTarget, resolveLink } from '@okf/core';
+import { isReservedTarget, resolveLink } from '@lorsabyan/okf-core';
 import { conceptHref } from './paths';
 
 /**

@@ -7,7 +7,7 @@
  * contract; it does not execute anything — OKF records the computation and the
  * means to check it, and stops there (§10).
  *
- * Browser-safe (no node imports), per the @okf/core rules in CLAUDE.md.
+ * Browser-safe (no node imports), per the @lorsabyan/okf-core rules in CLAUDE.md.
  */
 
 export const ATTESTED_COMPUTATION_TYPE = 'attested computation';

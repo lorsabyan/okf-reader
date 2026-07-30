@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { buildBundle } from '@okf/core';
+import { buildBundle } from '@lorsabyan/okf-core';
 import { prevNextInGroup } from './prev-next';
 
 // Two nav groups ("tables" and "metrics") built via buildBundle, mirroring

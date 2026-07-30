@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { loadBundle } from '@/lib/bundle';
-import { analyzeBundle } from '@okf/core';
+import { analyzeBundle } from '@lorsabyan/okf-core';
 
 export const metadata = { title: 'Bundle health' };
 

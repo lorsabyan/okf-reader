@@ -243,3 +243,32 @@ via `git diff`, which shows a `devDependencies` removal and new test cases neith
 written here) — they're attributable to another concurrently running executor referenced in this
 spike's task instructions. Called out here only so `git status` discrepancies against the
 "only `plans/009-report.md` is new" verification criterion aren't mistaken for this spike's work.
+
+---
+
+## Addendum, 2026-07-30: the `@okf` scope was NOT free
+
+Section 1 concluded that the `@okf` scope "looks unclaimed", on the strength of
+`search?text=scope:okf` returning zero results. That inference was wrong, and it
+only surfaced on the first real publish attempt:
+
+```
+npm error 404 Not Found - PUT https://registry.npmjs.org/@okf%2fcore
+```
+
+npm returns **404 rather than 403** for a scope you lack rights to, deliberately,
+so it does not leak whether a private scope exists. The distinguishing probe:
+
+| Probe | `okf` | a genuinely free scope |
+|---|---|---|
+| `GET /-/org/<scope>/user` | `200 {}` | `404 {"error":"Scope not found"}` |
+
+So the org exists and has simply published nothing — which is exactly why a
+package-search came back empty. **Package-name availability is not scope
+availability**, and only the org endpoint distinguishes them. The spike did hedge
+this as "short of registering it"; this is that case.
+
+Resolved by publishing under the personal scope instead:
+`@okf/core` → **`@lorsabyan/okf-core`**. That also avoids implying the package is
+the OKF format's canonical library — Google owns the spec, and a competing
+toolkit has more traction.

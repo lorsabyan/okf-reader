@@ -1,6 +1,6 @@
 # Changelog
 
-Notable changes to the reader app and to `@okf/core`, the bundle model and
+Notable changes to the reader app and to `@lorsabyan/okf-core`, the bundle model and
 `okf-validate` CLI that ships from `packages/okf-core`. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,7 +9,7 @@ Notable changes to the reader app and to `@okf/core`, the bundle model and
 because this release is what added OKF v0.2 support, but a future `0.3.0` would
 not imply an OKF v0.3.
 
-`@okf/core` is versioned in lockstep with the app and is **not yet published to
+`@lorsabyan/okf-core` is versioned in lockstep with the app and is **not yet published to
 npm**. While it is `0.x`, a minor bump may carry breaking API changes, per
 semver's pre-1.0 rule.
 
@@ -46,13 +46,13 @@ Reads **OKF v0.2**. Plans [013–017](plans/README.md).
 
 ### Changed
 
-- **BREAKING (`@okf/core`): `HealthReport.stale` changed shape and meaning.**
+- **BREAKING (`@lorsabyan/okf-core`): `HealthReport.stale` changed shape and meaning.**
   It was `{ id, timestamp }[]` computed from a 365-day age heuristic this repo
   invented. It is now `{ id, staleSince }[]` computed from the author's own
   `stale_after` (§5.5). The age heuristic survives as a separate `aging`
   field. A concept can be two years old and deliberately current, or a week old
   and already expired; one field got both wrong.
-- **BREAKING (`@okf/core`): `Concept` gained non-optional `verified`, `status`,
+- **BREAKING (`@lorsabyan/okf-core`): `Concept` gained non-optional `verified`, `status`,
   and `sources`**, so consumers never branch on undefined. Also added:
   `generated`, `staleAfter`, `computation`, and `updatedAt`.
 - **`updatedAt` is the field the UI should read.** It resolves `generated.at`
@@ -97,7 +97,7 @@ Reads **OKF v0.2**. Plans [013–017](plans/README.md).
 Static-first Next.js reader for OKF v0.1 bundles: sidebar navigation, concept
 pages, cross-links and backlinks, connection graphs, guided tours, full-text
 search, bundle health, and a runtime viewer that opens a local directory or a
-public GitHub repo in-browser. `@okf/core` extracted as a workspace package with
+public GitHub repo in-browser. `@lorsabyan/okf-core` extracted as a workspace package with
 the `okf-validate` CLI. Plans [001–012](plans/README.md).
 
 [Unreleased]: https://github.com/lorsabyan/okf-reader/compare/v0.2.0...HEAD
