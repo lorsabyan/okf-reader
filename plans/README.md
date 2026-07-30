@@ -1,6 +1,6 @@
 # Improvement plans
 
-Four batches. 001–003: `improve-react` audit at commit `8e223b8` (2026-07-15) —
+Five batches. 001–003: `improve-react` audit at commit `8e223b8` (2026-07-15) —
 React Doctor scan (score 46, driven by verified-false-positive security
 diagnostics) + five-category manual audit. 004–009: `/improve` full audit at the
 same commit (with 001–003 applied, uncommitted) — four-category subagent audit
@@ -11,7 +11,8 @@ cross-checked by a fresh-context advisor against the source. 013–017: OKF v0.2
 conformance audit at commit `4ae3ca5` — the reader models OKF v0.1 while every
 upstream reference bundle has migrated to v0.2; findings measured by running
 `@okf/core` and `okf-validate` against a v0.2 bundle rather than read off the
-source.
+source. 018: settling the `@lorsabyan/okf-core` 0.x API immediately after
+publishing it, while it still had zero installs and breaking changes were free.
 
 | Plan | Title | Severity | Status | Depends on |
 |------|-------|----------|--------|------------|
@@ -32,6 +33,7 @@ source.
 | [015](015-surface-trust-and-freshness.md) | Surface trust, status, and freshness in the reader UI | HIGH | DONE | 013, 014 |
 | [016](016-attested-computation.md) | Render `Attested Computation` concepts | MED | DONE | 013 |
 | [017](017-revendor-example-bundle.md) | Migrate `example-bundle/` to OKF v0.2 in place (re-vendor rejected — see plan) | MED | DONE | 013–015 |
+| [018](018-settle-core-api.md) | Settle the `@lorsabyan/okf-core` 0.x surface (node loader, JSON serialization, search moved in; `walk` removed) | MED | DONE | — |
 
 ## Execution order (batch 2)
 

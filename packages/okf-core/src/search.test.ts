@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import type { Concept } from '@lorsabyan/okf-core';
-import { buildBundleIndex, searchBundle } from './search-bundle';
+import type { Concept } from './core.ts';
+import { buildBundleIndex, searchBundle } from './search.ts';
 
 function concept(overrides: Partial<Concept> & Pick<Concept, 'id'>): Concept {
   return {

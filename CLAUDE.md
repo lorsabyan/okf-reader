@@ -42,13 +42,18 @@ instead of under `playwright test`. See `playwright.config.ts`
 ## @lorsabyan/okf-core rules
 
 `packages/okf-core/src/index.ts` and everything it re-exports (`core.ts`,
-`trust.ts`, `computation.ts`, `tours.ts`, `health.ts`, `detect-root.ts`) must
+`trust.ts`, `computation.ts`, `search.ts`, `serialize.ts`, `tours.ts`, `health.ts`,
+`detect-root.ts`) must
 stay browser-safe — no `node:*` imports. It's consumed directly by the
 client-side runtime viewer.
 
-`node:*` imports are allowed only in `src/cli.ts` and `src/validate.ts`,
-exposed as the separate `@lorsabyan/okf-core/validate` subpath — never re-exported
-from `index.ts`.
+`node:*` imports are allowed only in `src/cli.ts`, `src/validate.ts`, and
+`src/node.ts`, exposed as the separate `@lorsabyan/okf-core/validate` and
+`@lorsabyan/okf-core/node` subpaths — never re-exported from `index.ts`.
+
+`readBundleFiles` in `node.ts` is the ONE fs-walk. It used to exist three times
+(here, the app's `src/lib/bundle.ts`, and a third copy an MCP server would have
+written); do not add a fourth.
 
 The package builds to `packages/okf-core/dist/` (gitignored) via the root
 pre-hooks above. Bun resolves the `"bun"` export condition straight to TS

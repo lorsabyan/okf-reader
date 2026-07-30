@@ -1,4 +1,4 @@
-import type { Concept, CoreBundle } from '@lorsabyan/okf-core';
+import type { Concept, CoreBundle } from './core.ts';
 
 /**
  * In-memory full-text search over an already-loaded bundle (runtime viewer
