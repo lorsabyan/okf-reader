@@ -1,13 +1,17 @@
 # Improvement plans
 
-Three batches. 001–003: `improve-react` audit at commit `8e223b8` (2026-07-15) —
+Four batches. 001–003: `improve-react` audit at commit `8e223b8` (2026-07-15) —
 React Doctor scan (score 46, driven by verified-false-positive security
 diagnostics) + five-category manual audit. 004–009: `/improve` full audit at the
 same commit (with 001–003 applied, uncommitted) — four-category subagent audit
 (tests+DX, debt+docs, deps+supply-chain, direction) vetted line-by-line and
 second-opinioned by a fresh-context advisor. 010–012: UI/UX review at commit
 `b24f7eb` — a live browser pass (light/dark, desktop/mobile, every major page)
-cross-checked by a fresh-context advisor against the source.
+cross-checked by a fresh-context advisor against the source. 013–017: OKF v0.2
+conformance audit at commit `4ae3ca5` — the reader models OKF v0.1 while every
+upstream reference bundle has migrated to v0.2; findings measured by running
+`@okf/core` and `okf-validate` against a v0.2 bundle rather than read off the
+source.
 
 | Plan | Title | Severity | Status | Depends on |
 |------|-------|----------|--------|------------|
@@ -23,6 +27,11 @@ cross-checked by a fresh-context advisor against the source.
 | [010](010-header-responsive-fix.md) | Fix global header's total lack of responsive behavior (wraps/breaks at 375px) | HIGH | DONE | — |
 | [011](011-color-token-pass.md) | Introduce one accent hue + warning token; wire health severity and badge distinction | HIGH | DONE | — |
 | [012](012-polish-wrap-and-copy.md) | Fix mid-word URL wrapping (break-all → break-words); reword dev-mode search message | LOW | DONE | — |
+| [013](013-okf-v02-data-model.md) | Carry OKF v0.2 provenance, trust, and lifecycle fields in `@okf/core` | HIGH | TODO | — |
+| [014](014-health-and-validate-v02.md) | Health + `okf-validate`: spec-driven staleness, stop demanding `timestamp` | HIGH | TODO | 013 |
+| [015](015-surface-trust-and-freshness.md) | Surface trust, status, and freshness in the reader UI | HIGH | TODO | 013, 014 |
+| [016](016-attested-computation.md) | Render `Attested Computation` concepts | MED | TODO | 013 |
+| [017](017-revendor-example-bundle.md) | Re-vendor `example-bundle/` at OKF v0.2 | MED | TODO | 013–015 |
 
 ## Execution order (batch 2)
 
@@ -33,6 +42,26 @@ cross-checked by a fresh-context advisor against the source.
 
 1. **010–012 all run in parallel** — fully disjoint file ownership: 010 = `src/app/layout.tsx` + `src/components/HeaderNav.tsx`; 011 = `src/app/globals.css` + `src/components/ui/badge.tsx` + `src/components/open/HealthView.tsx` + `src/app/(reader)/health/page.tsx`; 012 = `src/app/(reader)/c/[...slug]/page.tsx` + `src/components/SearchDialog.tsx`.
 2. Every plan in this batch requires a **behavior check in a real browser** (`bun run dev`), not just typecheck/tests — these are visual/UX fixes. Full gate after all three land: `bun run typecheck && bun test && bun run build && bun run e2e`, plus a manual browser pass at desktop + 375px, light + dark.
+
+## Execution order (batch 4)
+
+1. **013 first, alone** — every other plan in this batch consumes its model. It is the only one
+   that touches `packages/okf-core/src/core.ts`'s `Concept` shape.
+2. **014 and 016 in parallel** — disjoint: 014 owns `health.ts`/`validate.ts`/`cli.ts`, 016 owns
+   the computation contract and its component.
+3. **015 after 014** — it renders the health fields 014 defines. Requires a **browser pass**
+   (desktop + 375px, light + dark) like batch 3, not just typecheck/tests.
+4. **017 last** — re-vendoring the demo bundle changes screenshots and e2e fixtures, so it wants
+   the UI settled first.
+5. Full gate after each: `bun run typecheck && bun test && bun run build && bun run e2e`.
+
+Verify against a real v0.2 bundle throughout, not just `example-bundle/` — it stays v0.1 until 017:
+
+```sh
+git clone https://github.com/GoogleCloudPlatform/knowledge-catalog /tmp/kc
+git -C /tmp/kc checkout 3fcbb9f
+OKF_BUNDLE=/tmp/kc/okf/bundles/acme_retail bun run dev   # the only bundle with Attested Computations
+```
 
 ## Considered and rejected / deferred (batch 2)
 
