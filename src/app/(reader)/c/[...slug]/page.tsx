@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ConceptMeta from '@/components/ConceptMeta';
+import ComputationContract from '@/components/ComputationContract';
 import Provenance from '@/components/Provenance';
 import { Separator } from '@/components/ui/separator';
 import { loadBundle } from '@/lib/bundle';
@@ -95,6 +96,8 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
             )}
           </p>
         )}
+
+        {concept.computation && <ComputationContract contract={concept.computation} />}
 
         <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: html }} />
 

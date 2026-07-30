@@ -1,4 +1,5 @@
 import { load as parseYaml } from 'js-yaml';
+import { parseComputation, type Computation } from './computation.ts';
 import {
   normalizeVerified,
   parseGenerated,
@@ -64,6 +65,8 @@ export interface Concept {
   staleAfter?: string;
   /** v0.2 §5.1: the materials this concept derives from. */
   sources: Source[];
+  /** v0.2 §10: the sanctioned computation contract. Only for Attested Computations. */
+  computation?: Computation;
   /**
    * `generated.at` for v0.2, falling back to `timestamp` for v0.1 (spec §13
    * requires consumers to keep reading the legacy field). This is the single
@@ -171,6 +174,7 @@ export function buildBundle(files: Map<string, string>, name: string): CoreBundl
       status: parseStatus(data.status),
       staleAfter: data.stale_after != null ? String(data.stale_after) : undefined,
       sources: parseSources(data.sources),
+      computation: parseComputation(data),
       updatedAt: generated?.at ?? timestamp,
       body,
       outLinks: [],

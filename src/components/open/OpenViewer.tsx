@@ -25,6 +25,7 @@ import TourView from '@/components/tour/TourView';
 import ViewerErrorBoundary from '@/components/open/ViewerErrorBoundary';
 import { Badge } from '@/components/ui/badge';
 import ConceptMeta from '@/components/ConceptMeta';
+import ComputationContract from '@/components/ComputationContract';
 import Provenance from '@/components/Provenance';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -185,6 +186,8 @@ function ConceptView({ bundle, concept }: { bundle: CoreBundle; concept: Concept
             )}
           </p>
         )}
+        {concept.computation && <ComputationContract contract={concept.computation} />}
+
         <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: rendered.html }} />
 
         <Provenance sources={concept.sources} />

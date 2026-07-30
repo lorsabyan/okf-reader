@@ -1,6 +1,6 @@
 # 016 — Render `Attested Computation` concepts
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 4ae3ca5 (all excerpts verified against the tree)
 - **Severity**: MED (v0.2's headline addition renders as an untyped generic concept)
 - **Category**: Feature / spec conformance

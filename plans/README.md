@@ -30,7 +30,7 @@ source.
 | [013](013-okf-v02-data-model.md) | Carry OKF v0.2 provenance, trust, and lifecycle fields in `@okf/core` | HIGH | DONE | — |
 | [014](014-health-and-validate-v02.md) | Health + `okf-validate`: spec-driven staleness, stop demanding `timestamp` | HIGH | DONE | 013 |
 | [015](015-surface-trust-and-freshness.md) | Surface trust, status, and freshness in the reader UI | HIGH | DONE | 013, 014 |
-| [016](016-attested-computation.md) | Render `Attested Computation` concepts | MED | TODO | 013 |
+| [016](016-attested-computation.md) | Render `Attested Computation` concepts | MED | DONE | 013 |
 | [017](017-revendor-example-bundle.md) | Re-vendor `example-bundle/` at OKF v0.2 | MED | TODO | 013–015 |
 
 ## Execution order (batch 2)
