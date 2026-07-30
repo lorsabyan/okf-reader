@@ -11,7 +11,12 @@ tags:
 - Google Analytics
 - BigQuery
 - public dataset
-timestamp: '2026-05-28T22:49:59+00:00'
+generated:
+  by: reference_agent/unknown
+  at: '2026-05-28T22:49:59+00:00'
+sources:
+- id: web-ecommerce-demo-dataset
+  resource: https://developers.google.com/analytics/bigquery/web-ecommerce-demo-dataset
 ---
 
 # Overview
@@ -36,6 +41,3 @@ SELECT
   COUNT(DISTINCT event_date) AS day_count
 FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
 ```
-
-# Citations
-- https://developers.google.com/analytics/bigquery/web-ecommerce-demo-dataset

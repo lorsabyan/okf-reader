@@ -1,6 +1,6 @@
 # okf-reader
 
-A static-first reading app for [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+A static-first reading app for [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f/okf/SPEC.md)
 knowledge bundles — built for humans, not just agents. Point it at a bundle
 directory and it renders a browsable site: sidebar navigation, concept pages
 with frontmatter badges, rewired cross-links, backlinks ("cited by"), and a
@@ -73,19 +73,72 @@ exactly as OKF intends.
 
 - **Navigation** is grouped by the bundle's directory hierarchy, with a
   client-side filter over titles, IDs, types, and tags.
-- **Cross-links** (`/tables/x.md`) are rewired to reader routes; links to
+- **Cross-links** (`./tables/x.md`, or the bundle-absolute `/tables/x.md`) are
+  rewired to reader routes; links to
   missing concepts render as dashed "not yet written" markers, per the
   spec's tolerance rules.
 - **Frontmatter** drives the UI: `type` and `tags` become badges,
-  `timestamp` powers the "recently updated" feed, `resource` links out to
-  the underlying asset.
+  `generated.at` powers the "recently updated" feed (falling back to v0.1's
+  `timestamp`), `resource` links out to the underlying asset.
+- **Trust and lifecycle** are surfaced from OKF v0.2: `status`, the trust tier
+  derived from `verified`, and `stale_after` render as badges; `sources`
+  render as a provenance list. An `Attested Computation` shows its contract —
+  runtime, parameters, receipt fields, executor and attester.
 - **Backlinks** are computed from the link graph and shown as "Cited by".
 
 ## Example bundle
 
 `example-bundle/` is the GA4 e-commerce bundle from
 [GoogleCloudPlatform/knowledge-catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog)
-(Copyright Google LLC, Apache 2.0), vendored for the out-of-the-box demo.
+(Copyright Google LLC, Apache 2.0), vendored for the out-of-the-box demo, with
+two deliberate local changes:
+
+- **`tours/ga4-essentials.md` is ours.** Tours are an okf-reader extension —
+  `steps` is not an OKF concept — so upstream has none.
+- **Its frontmatter was migrated to OKF v0.2 in place** (plan 017): `timestamp`
+  became `generated: { by, at }` preserving the original instant, and each
+  `# Citations` body list became `sources` entries. Content is otherwise
+  untouched.
+
+It is therefore no longer byte-identical to any upstream commit. Upstream
+rewrote its own GA4 bundle during its v0.2 migration — different metrics, no
+`joins/` — so re-vendoring wholesale would have replaced this bundle's content
+and deleted the tour the reader demos. `generated.by` reads
+`reference_agent/unknown` on the vendored docs because OKF v0.1 recorded no
+producer and upstream's history has none either; that missing field is exactly
+what v0.2 added `generated` to fix.
+
+### A second bundle for the v0.2 trust features
+
+`example-bundle-acme-retail/` is upstream's Acme Retail bundle, vendored
+**byte-identical** at commit
+[`3fcbb9f`](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/3fcbb9f/okf/bundles/acme_retail)
+(Copyright Google LLC, Apache 2.0), minus its `viz.html`.
+
+The GA4 bundle cannot demonstrate OKF v0.2's trust and lifecycle features,
+because none of them are true of it — nobody verified that content and nothing
+in it is deprecated or expiring, and inventing those signals would put
+fabricated provenance inside a provenance format. Acme Retail carries them
+honestly:
+
+| | GA4 | Acme Retail |
+|---|---|---|
+| `verified` | 0 docs | 8 docs (9 human verifiers) |
+| `stale_after` | 0 docs | 7 docs |
+| `status: deprecated` | 0 docs | 1 doc |
+| `type: Attested Computation` | 0 docs | 2 docs |
+| `sources` | 11 docs | 5 docs |
+
+Point the reader at it to see trust tiers, deprecation, staleness, provenance,
+and computation contracts rendered:
+
+```sh
+OKF_BUNDLE=example-bundle-acme-retail OKF_BUNDLE_NAME="Acme Retail" bun run dev
+```
+
+It is not the default demo and is not used by the tests or screenshots — the
+reader builds one bundle at a time, and `example-bundle/` remains the one it
+ships with.
 
 Note: both the baked (SSG) mode and the runtime viewer (`/open/`) sanitize
 rendered HTML via the same unified/rehype pipeline (`rehype-sanitize`, a
@@ -109,7 +162,7 @@ bun run e2e                 # Playwright smoke suite against out/ (build first)
 bun run screenshots         # regenerate the README screenshots into docs/
 ```
 
-`@okf/core` also ships `okf-validate`, a v0.1 conformance checker for a
+`@okf/core` also ships `okf-validate`, a v0.2 conformance checker for a
 bundle directory (mirrors the reference Python validator in
 [okf-skill](https://github.com/lorsabyan/okf-skill)):
 

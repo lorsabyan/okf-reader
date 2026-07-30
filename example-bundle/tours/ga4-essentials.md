@@ -8,7 +8,9 @@ steps:
   - references/metrics/event_count
   - references/metrics/user_count
   - references/metrics/day_count
-timestamp: '2026-07-13T00:00:00+00:00'
+generated:
+  by: human:lorsabyan
+  at: '2026-07-13T00:00:00+00:00'
 ---
 
 This tour is a five-stop introduction to the `ga4_obfuscated_sample_ecommerce` sample dataset. It starts at the dataset level — what it contains, where it lives, and its known limitations — then drops into the `events_` table that backs almost everything else in this bundle.

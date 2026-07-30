@@ -155,3 +155,78 @@ describe('buildBundle steps frontmatter', () => {
     expect(bundle.byId.get('tables/untouched')!.steps).toBeUndefined();
   });
 });
+
+describe('buildBundle v0.2 provenance, trust, and lifecycle', () => {
+  const v02 = [
+    '---',
+    'type: Metric',
+    'title: Revenue',
+    'description: Recognized revenue.',
+    'status: deprecated',
+    'stale_after: 2026-12-31',
+    'generated: { by: reference_agent/gemini-2.5-pro, at: 2026-06-20T22:53:05Z }',
+    'verified:',
+    '  - { by: process:nightly, at: 2026-06-26T02:00:00Z }',
+    '  - { by: human:ahormati, at: 2026-06-25T09:00:00Z }',
+    'sources:',
+    '  - id: rev-policy',
+    '    resource: policies/revenue.md',
+    '    title: Revenue policy',
+    '---',
+    'Body.',
+  ].join('\n');
+
+  const build = (text: string) => buildBundle(new Map([['a.md', text]]), 'test').byId.get('a')!;
+
+  test('carries every v0.2 family', () => {
+    const c = build(v02);
+    expect(c.generated).toEqual({ by: 'reference_agent/gemini-2.5-pro', at: '2026-06-20T22:53:05Z' });
+    expect(c.verified.map((v) => v.by)).toEqual(['process:nightly', 'human:ahormati']);
+    expect(c.status).toBe('deprecated');
+    expect(c.staleAfter).toBe('2026-12-31');
+    expect(c.sources).toEqual([
+      { id: 'rev-policy', resource: 'policies/revenue.md', title: 'Revenue policy' },
+    ]);
+  });
+
+  test('updatedAt prefers generated.at', () => {
+    expect(build(v02).updatedAt).toBe('2026-06-20T22:53:05Z');
+  });
+
+  test('updatedAt falls back to a v0.1 timestamp (spec §13)', () => {
+    const c = build('---\ntype: Metric\ntimestamp: 2026-05-28T22:49:59+00:00\n---\nBody.');
+    expect(c.updatedAt).toBe('2026-05-28T22:49:59+00:00');
+    expect(c.timestamp).toBe('2026-05-28T22:49:59+00:00');
+    expect(c.generated).toBeUndefined();
+  });
+
+  test('generated.at wins when a bundle carries both', () => {
+    const c = build(
+      '---\ntype: Metric\ntimestamp: 2020-01-01T00:00:00Z\ngenerated: { by: human:x, at: 2026-06-20T22:53:05Z }\n---\nB.',
+    );
+    expect(c.updatedAt).toBe('2026-06-20T22:53:05Z');
+  });
+
+  test('updatedAt is undefined when a concept carries neither', () => {
+    expect(build('---\ntype: Metric\n---\nBody.').updatedAt).toBeUndefined();
+  });
+
+  test('a bare verified mapping becomes a one-element list', () => {
+    const c = build('---\ntype: Metric\nverified: { by: human:x, at: 2026-06-25T09:00:00Z }\n---\nB.');
+    expect(c.verified).toEqual([{ by: 'human:x', at: '2026-06-25T09:00:00Z' }]);
+  });
+
+  test('a v0.1 concept gets the documented defaults, not undefined', () => {
+    const c = build('---\ntype: Metric\ntimestamp: 2026-05-28T22:49:59+00:00\n---\nBody.');
+    expect(c.verified).toEqual([]);
+    expect(c.sources).toEqual([]);
+    expect(c.status).toBe('stable');
+    expect(c.staleAfter).toBeUndefined();
+  });
+
+  test('unknown frontmatter keys do not break the build (spec §4.1)', () => {
+    const c = build('---\ntype: Metric\nvendor_thing: keep me\nokf_version: "0.2"\n---\nBody.');
+    expect(c.type).toBe('Metric');
+    expect(c.status).toBe('stable');
+  });
+});

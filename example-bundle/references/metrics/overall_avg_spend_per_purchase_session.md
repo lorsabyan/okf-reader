@@ -6,7 +6,12 @@ description: The overall average amount spent across all unique purchase session
 tags:
 - metric
 - ecommerce
-timestamp: '2026-05-28T22:52:32+00:00'
+generated:
+  by: reference_agent/unknown
+  at: '2026-05-28T22:52:32+00:00'
+sources:
+- id: bigquery-advanced-queries
+  resource: https://developers.google.com/analytics/bigquery/advanced-queries
 ---
 
 The overall average amount spent across all unique purchase sessions.
@@ -15,6 +20,3 @@ The overall average amount spent across all unique purchase sessions.
 AVG(total_session_spend)
 -- where total_session_spend is SUM(COALESCE(...)) for event_name = 'purchase' events within a session, grouped by user_pseudo_id and ga_session_id
 ```
-
-# Citations
-- https://developers.google.com/analytics/bigquery/advanced-queries

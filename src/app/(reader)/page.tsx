@@ -12,8 +12,8 @@ export default async function Home() {
   for (const c of bundle.concepts) types.set(c.type, (types.get(c.type) ?? 0) + 1);
 
   const recent = bundle.concepts
-    .filter((c) => c.timestamp)
-    .sort((a, b) => (b.timestamp! < a.timestamp! ? -1 : 1))
+    .filter((c) => c.updatedAt)
+    .sort((a, b) => (b.updatedAt! < a.updatedAt! ? -1 : 1))
     .slice(0, 8);
 
   const rootIndex = bundle.files.get('index.md');
@@ -54,7 +54,7 @@ export default async function Home() {
                   {c.title}
                 </Link>
                 <span className="text-muted-foreground"> — {c.description || c.type}</span>{' '}
-                <time className="text-muted-foreground">({c.timestamp!.slice(0, 10)})</time>
+                <time className="text-muted-foreground">({c.updatedAt!.slice(0, 10)})</time>
               </li>
             ))}
           </ul>

@@ -12,7 +12,18 @@ tags:
 - schema
 - basic queries
 - advanced queries
-timestamp: '2026-05-28T22:53:05+00:00'
+generated:
+  by: reference_agent/unknown
+  at: '2026-05-28T22:53:05+00:00'
+sources:
+- id: web-ecommerce-demo-dataset
+  resource: https://developers.google.com/analytics/bigquery/web-ecommerce-demo-dataset
+- id: analytics-answer-7029846
+  resource: https://support.google.com/analytics/answer/7029846
+- id: bigquery-basic-queries
+  resource: https://developers.google.com/analytics/bigquery/basic-queries
+- id: bigquery-advanced-queries
+  resource: https://developers.google.com/analytics/bigquery/advanced-queries
 ---
 
 # Overview
@@ -305,9 +316,3 @@ The publisher RECORD contains information about events sourced from a publisher 
 
 # Joins
 - [Google Analytics Events to Google Ads Clicks](../references/joins/events___ads_clickstats.md) — join on `collected_traffic_source.gclid` to attach Google Ads data to events.
-
-# Citations
-- https://developers.google.com/analytics/bigquery/web-ecommerce-demo-dataset
-- https://support.google.com/analytics/answer/7029846
-- https://developers.google.com/analytics/bigquery/basic-queries
-- https://developers.google.com/analytics/bigquery/advanced-queries

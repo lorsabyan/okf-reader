@@ -47,7 +47,7 @@ test('tour flow: start tour, then step forward via the sticky bar', async ({ pag
   await expect(stickyBar).toHaveText('Step 2 of 5');
 });
 
-test('health page renders all six category headings', async ({ page }) => {
+test('health page renders every category heading', async ({ page }) => {
   await page.goto('/health/');
   await expect(page.getByRole('heading', { level: 1, name: 'Bundle health' })).toBeVisible();
 
@@ -55,8 +55,13 @@ test('health page renders all six category headings', async ({ page }) => {
     'Broken links',
     'Missing descriptions',
     'Untyped concepts',
-    'Stale concepts (older than a year)',
+    // Spec staleness (`stale_after`) and the reader's own age heuristic are
+    // separate categories — see plan 014.
+    'Stale concepts (past stale_after)',
+    'Aging concepts (not updated in over a year)',
     'Undated concepts',
+    'Deprecated concepts',
+    'Unverified concepts (no recorded verification)',
     'Orphans (no inbound or outbound links)',
   ]) {
     await expect(page.getByRole('heading', { level: 2, name: heading })).toBeVisible();

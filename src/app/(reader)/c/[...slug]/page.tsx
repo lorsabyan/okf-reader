@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import ConceptMeta from '@/components/ConceptMeta';
+import ComputationContract from '@/components/ComputationContract';
+import Provenance from '@/components/Provenance';
 import { Separator } from '@/components/ui/separator';
 import { loadBundle } from '@/lib/bundle';
 import { renderMarkdownWithHighlight } from '@/lib/markdown-highlight';
@@ -47,7 +50,7 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
           title: concept.title,
           type: concept.type,
           description: concept.description,
-          timestamp: concept.timestamp,
+          timestamp: concept.updatedAt,
           tags: concept.tags,
         }}
         introHtml={html}
@@ -73,17 +76,7 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
         data-pagefind-meta={`type:${concept.type}`}
       >
         <Breadcrumbs id={concept.id} title={concept.title} homeHref="/" />
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <Badge>{concept.type}</Badge>
-          {concept.timestamp && (
-            <time className="text-sm text-muted-foreground">{concept.timestamp.slice(0, 10)}</time>
-          )}
-          {concept.tags.map((t) => (
-            <Badge key={t} variant="outline">
-              {t}
-            </Badge>
-          ))}
-        </div>
+        <ConceptMeta concept={concept} />
         <h1 className="mt-3 text-3xl font-bold tracking-tight">{concept.title}</h1>
         {concept.description && <p className="mt-2 text-lg text-muted-foreground">{concept.description}</p>}
         {concept.resource && (
@@ -104,7 +97,11 @@ export default async function ConceptPage({ params }: { params: Promise<{ slug: 
           </p>
         )}
 
+        {concept.computation && <ComputationContract contract={concept.computation} />}
+
         <section className={PROSE_CLASS} dangerouslySetInnerHTML={{ __html: html }} />
+
+        <Provenance sources={concept.sources} />
 
         <Neighborhood
           center={{ id: concept.id, title: concept.title }}
