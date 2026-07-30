@@ -1,0 +1,52 @@
+version: 2
+
+# Why this file exists
+#
+# Without it, Dependabot ran on repo defaults and opened security PRs through
+# the `npm` ecosystem. Those bump package.json but never touch `bun.lock`, and
+# CI installs with `bun install --frozen-lockfile` — so every such PR failed
+# with "lockfile had changes, but lockfile is frozen" and could never go green
+# (see PRs #1 and #2).
+#
+# The `bun` ecosystem understands `bun.lock` and updates it in the same commit.
+# It supports version updates but NOT security updates, so the real defence is
+# keeping dependencies current here rather than waiting for an advisory: a
+# security PR that does arrive will still come through `npm` and still need the
+# lockfile refreshed by hand (`bun add <pkg>@<version>`).
+
+updates:
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      # One PR per batch keeps review manageable; these move together anyway.
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      tailwind:
+        patterns: ["tailwindcss", "@tailwindcss/*", "tw-animate-css"]
+      unified:
+        patterns: ["unified", "remark-*", "rehype-*", "@shikijs/*"]
+      dev-tooling:
+        patterns: ["@playwright/test", "@types/*", "typescript", "pagefind", "shadcn"]
+    ignore:
+      # TypeScript 7 fails the typecheck with 26 errors — `bun:test`, the `Bun`
+      # global, and `ImportMeta.dir` all go unresolved because @types/bun is not
+      # yet TS 7-compatible. Bisected: TS 7 breaks with old node types too, and
+      # @types/node 26 is clean on TS 5.9. Drop this ignore once @types/bun
+      # supports TS 7.
+      - dependency-name: "typescript"
+        versions: ["7.x"]
+
+  - package-ecosystem: "bun"
+    directory: "/packages/okf-core"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
