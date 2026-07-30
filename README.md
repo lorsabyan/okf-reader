@@ -172,6 +172,20 @@ bunx okf-validate example-bundle [--strict]
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full dev workflow.
 
+## Versioning
+
+Releases are tagged and documented in [CHANGELOG.md](CHANGELOG.md); the
+per-batch detail and the reasoning behind each decision live in
+[plans/](plans/README.md).
+
+`@okf/core` is versioned in lockstep with the app and is not yet published to
+npm. While it is `0.x`, a minor bump may carry breaking API changes — `0.2.0`
+does: `HealthReport.stale` changed shape and meaning, and `Concept` gained
+non-optional `verified`, `status`, and `sources`.
+
+The version tracks this repo, not the format. They line up at `0.2.x` only
+because that release added OKF v0.2 support.
+
 ## License
 
 Apache 2.0.
