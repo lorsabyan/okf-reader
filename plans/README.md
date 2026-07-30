@@ -28,7 +28,7 @@ source.
 | [011](011-color-token-pass.md) | Introduce one accent hue + warning token; wire health severity and badge distinction | HIGH | DONE | — |
 | [012](012-polish-wrap-and-copy.md) | Fix mid-word URL wrapping (break-all → break-words); reword dev-mode search message | LOW | DONE | — |
 | [013](013-okf-v02-data-model.md) | Carry OKF v0.2 provenance, trust, and lifecycle fields in `@okf/core` | HIGH | DONE | — |
-| [014](014-health-and-validate-v02.md) | Health + `okf-validate`: spec-driven staleness, stop demanding `timestamp` | HIGH | TODO | 013 |
+| [014](014-health-and-validate-v02.md) | Health + `okf-validate`: spec-driven staleness, stop demanding `timestamp` | HIGH | DONE | 013 |
 | [015](015-surface-trust-and-freshness.md) | Surface trust, status, and freshness in the reader UI | HIGH | TODO | 013, 014 |
 | [016](016-attested-computation.md) | Render `Attested Computation` concepts | MED | TODO | 013 |
 | [017](017-revendor-example-bundle.md) | Re-vendor `example-bundle/` at OKF v0.2 | MED | TODO | 013–015 |

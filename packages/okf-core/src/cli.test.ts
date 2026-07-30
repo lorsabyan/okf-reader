@@ -36,7 +36,31 @@ describe('okf-validate CLI', () => {
     write('other.md', '---\ntype: Concept\ndescription: Something else.\ntimestamp: 2026-01-01\n---\nSee [concept](./concept.md).');
     const { exitCode, stdout } = run([dir]);
     expect(exitCode).toBe(0);
-    expect(stdout).toContain('Bundle is conformant with OKF v0.1.');
+    expect(stdout).toContain('Bundle is conformant with OKF v0.2.');
+  });
+
+  test('a v0.2 bundle produces no legacy-timestamp warnings', () => {
+    const gen = 'generated: { by: human:x, at: 2026-06-20T22:53:05Z }';
+    write('concept.md', `---\ntype: Concept\ndescription: A.\n${gen}\n---\nSee [other](./other.md).`);
+    write('other.md', `---\ntype: Concept\ndescription: B.\n${gen}\n---\nSee [concept](./concept.md).`);
+    const { exitCode, stdout } = run([dir]);
+    expect(exitCode).toBe(0);
+    expect(stdout).not.toContain('timestamp');
+    expect(stdout).toContain('0 warning(s)');
+  });
+
+  test('surfaces a bundle-declared okf_version that differs from the checked one', () => {
+    write('index.md', '---\nokf_version: "0.1"\n---\n\n# Root\n\n* [c](concept.md) - A.');
+    write('concept.md', '---\ntype: Concept\ndescription: A.\ntimestamp: 2026-01-01\n---\nBody.');
+    const { stdout } = run([dir]);
+    expect(stdout).toContain('Bundle is conformant with OKF v0.2 (it declares okf_version: 0.1).');
+  });
+
+  test('warns on an okf_version this validator does not know', () => {
+    write('index.md', '---\nokf_version: "9.9"\n---\n\n# Root\n\n* [c](concept.md) - A.');
+    write('concept.md', '---\ntype: Concept\ndescription: A.\ntimestamp: 2026-01-01\n---\nBody.');
+    const { stdout } = run([dir]);
+    expect(stdout).toContain("declares okf_version '9.9'");
   });
 
   test('exits 1 when there are errors', () => {

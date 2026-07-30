@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { validateBundle } from './validate.ts';
+import { CHECKED_VERSION, validateBundle } from './validate.ts';
 
 /**
  * `okf-validate` CLI entry point. Thin wrapper around `validateBundle`
@@ -50,13 +50,17 @@ function main(argv: string[]): number {
     return 2;
   }
 
-  const { bundle, errors, warnings } = validateBundle(target);
+  const { bundle, errors, warnings, declaredVersion } = validateBundle(target);
   for (const msg of errors) console.log(`ERROR   ${msg}`);
   for (const msg of warnings) console.log(`warning ${msg}`);
   console.log(`\n${target}: ${bundle.concepts.length} concept doc(s), ${errors.length} error(s), ${warnings.length} warning(s)`);
 
   if (errors.length || (strict && warnings.length)) return 1;
-  console.log('Bundle is conformant with OKF v0.1.');
+  console.log(
+    declaredVersion && declaredVersion !== CHECKED_VERSION
+      ? `Bundle is conformant with OKF v${CHECKED_VERSION} (it declares okf_version: ${declaredVersion}).`
+      : `Bundle is conformant with OKF v${CHECKED_VERSION}.`,
+  );
   return 0;
 }
 

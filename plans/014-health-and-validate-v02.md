@@ -1,6 +1,6 @@
 # 014 — Health and `okf-validate`: use the spec's staleness, stop demanding `timestamp`
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 4ae3ca5 (all excerpts verified against the tree)
 - **Severity**: HIGH (every v0.2 concept produces a spurious warning; staleness is invented)
 - **Category**: Bug / spec conformance

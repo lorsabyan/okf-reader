@@ -57,8 +57,11 @@ export default function HealthView({ bundle }: { bundle: CoreBundle }) {
         <Badge variant={report.untyped.length ? 'warning' : 'outline'}>
           Untyped <span className="ml-1 font-bold">{report.untyped.length}</span>
         </Badge>
-        <Badge variant={report.stale.length ? 'warning' : 'outline'}>
+        <Badge variant={report.stale.length ? 'destructive' : 'outline'}>
           Stale <span className="ml-1 font-bold">{report.stale.length}</span>
+        </Badge>
+        <Badge variant={report.aging.length ? 'warning' : 'outline'}>
+          Aging <span className="ml-1 font-bold">{report.aging.length}</span>
         </Badge>
         <Badge variant={report.undated.length ? 'warning' : 'outline'}>
           Undated <span className="ml-1 font-bold">{report.undated.length}</span>
@@ -98,11 +101,21 @@ export default function HealthView({ bundle }: { bundle: CoreBundle }) {
         </ul>
       </Section>
 
-      <Section title="Stale concepts (older than a year)" count={report.stale.length}>
+      <Section title="Stale concepts (past stale_after)" count={report.stale.length} severity="destructive">
         <ul className="space-y-2">
-          {report.stale.map(({ id, timestamp }) => (
+          {report.stale.map(({ id, staleSince }) => (
             <li key={id} className="text-sm leading-relaxed">
-              <ConceptLink bundle={bundle} id={id} /> <span className="text-muted-foreground">({timestamp.slice(0, 10)})</span>
+              <ConceptLink bundle={bundle} id={id} /> <span className="text-muted-foreground">(since {staleSince})</span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+
+      <Section title="Aging concepts (not updated in over a year)" count={report.aging.length}>
+        <ul className="space-y-2">
+          {report.aging.map(({ id, updatedAt }) => (
+            <li key={id} className="text-sm leading-relaxed">
+              <ConceptLink bundle={bundle} id={id} /> <span className="text-muted-foreground">({updatedAt.slice(0, 10)})</span>
             </li>
           ))}
         </ul>

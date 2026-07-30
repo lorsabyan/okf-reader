@@ -43,10 +43,21 @@ function hasMissingOrEmptyType(data: Record<string, unknown>): boolean {
   return typeof t !== 'string' || t.trim().length === 0;
 }
 
+/** OKF versions this validator knows how to check (spec §12). */
+const KNOWN_VERSIONS = new Set(['0.1', '0.2']);
+
+/** The version this validator checks against. v0.2 subsumes reading v0.1 documents. */
+export const CHECKED_VERSION = '0.2';
+
 export interface ValidationResult {
   bundle: CoreBundle;
   errors: string[];
   warnings: string[];
+  /**
+   * `okf_version` from the bundle-root `index.md`, when the bundle declares one
+   * (spec §12 — the only place frontmatter is permitted in an index).
+   */
+  declaredVersion?: string;
 }
 
 /** Read a bundle directory from disk and check it against the OKF v0.1 spec. */
@@ -87,6 +98,17 @@ export function validateBundle(dir: string): ValidationResult {
     }
   }
 
+  // Spec §12: a bundle MAY declare the version it targets in the root index.
+  const rootIndex = files.get('index.md');
+  const declaredRaw = rootIndex ? parseFrontmatter(rootIndex).data.okf_version : undefined;
+  const declaredVersion = declaredRaw != null ? String(declaredRaw) : undefined;
+  const versionWarnings =
+    declaredVersion && !KNOWN_VERSIONS.has(declaredVersion)
+      ? [
+          `index.md: declares okf_version '${declaredVersion}'; this validator knows ${[...KNOWN_VERSIONS].join(', ')}`,
+        ]
+      : [];
+
   const report = analyzeBundle(bundle);
   const warnings: string[] = [
     ...report.brokenLinks.map(({ fromId, target }) => `${fromId}: link to missing concept '${target}'`),
@@ -94,11 +116,14 @@ export function validateBundle(dir: string): ValidationResult {
     ...report.untyped
       .filter((id) => !explicitlyUntyped.has(id))
       .map((id) => `${id}: frontmatter is missing a non-empty 'type' field (defaulted to 'Concept')`),
+    ...versionWarnings,
     ...timestampWarnings,
-    ...report.stale.map(({ id, timestamp }) => `${id}: 'timestamp' (${timestamp}) is more than a year old`),
-    ...report.undated.map((id) => `${id}: no 'timestamp' field`),
+    ...report.stale.map(({ id, staleSince }) => `${id}: past its 'stale_after' (${staleSince})`),
+    ...report.aging.map(({ id, updatedAt }) => `${id}: last updated ${updatedAt}, over a year ago`),
+    ...report.undated.map((id) => `${id}: no 'generated.at' (or legacy 'timestamp')`),
+    ...report.deprecated.map((id) => `${id}: status is 'deprecated'`),
     ...report.orphans.map((id) => `${id}: orphan - no inbound or outbound links`),
   ];
 
-  return { bundle, errors, warnings };
+  return { bundle, errors, warnings, declaredVersion };
 }
