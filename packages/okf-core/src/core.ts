@@ -1,4 +1,13 @@
 import { load as parseYaml } from 'js-yaml';
+import {
+  normalizeVerified,
+  parseGenerated,
+  parseSources,
+  parseStatus,
+  type Actor,
+  type ConceptStatus,
+  type Source,
+} from './trust.ts';
 
 /**
  * Source-agnostic OKF bundle model. Everything here runs in both Node
@@ -43,7 +52,25 @@ export interface Concept {
   description: string;
   resource?: string;
   tags: string[];
+  /** OKF v0.1 only. v0.2 replaced this with `generated.at` — read `updatedAt` instead. */
   timestamp?: string;
+  /** v0.2 §5.2: how the current content was produced. */
+  generated?: Actor;
+  /** v0.2 §5.2: verification events. Always an array; a bare mapping is a 1-element list. */
+  verified: Actor[];
+  /** v0.2 §5.4. Absent frontmatter ⇒ 'stable'. */
+  status: ConceptStatus;
+  /** v0.2 §5.5: `YYYY-MM-DD`; the concept is stale on and after this day. */
+  staleAfter?: string;
+  /** v0.2 §5.1: the materials this concept derives from. */
+  sources: Source[];
+  /**
+   * `generated.at` for v0.2, falling back to `timestamp` for v0.1 (spec §13
+   * requires consumers to keep reading the legacy field). This is the single
+   * place that fallback lives — UI and health code should read only this, and
+   * never learn that `timestamp` existed.
+   */
+  updatedAt?: string;
   body: string;
   outLinks: string[]; // concept ids this doc links to (existing only)
   steps?: string[]; // ordered concept ids, present for tour concepts (frontmatter `steps`)
@@ -128,6 +155,8 @@ export function buildBundle(files: Map<string, string>, name: string): CoreBundl
     const id = path.replace(/\.md$/, '');
     const { data, body } = parseFrontmatter(text);
     const typeExplicit = typeof data.type === 'string' && data.type.trim() !== '';
+    const timestamp = data.timestamp != null ? String(data.timestamp) : undefined;
+    const generated = parseGenerated(data.generated);
     concepts.push({
       id,
       title: typeof data.title === 'string' ? data.title : id.split('/').pop()!,
@@ -136,7 +165,13 @@ export function buildBundle(files: Map<string, string>, name: string): CoreBundl
       description: typeof data.description === 'string' ? data.description : '',
       resource: typeof data.resource === 'string' ? data.resource : undefined,
       tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
-      timestamp: data.timestamp != null ? String(data.timestamp) : undefined,
+      timestamp,
+      generated,
+      verified: normalizeVerified(data.verified),
+      status: parseStatus(data.status),
+      staleAfter: data.stale_after != null ? String(data.stale_after) : undefined,
+      sources: parseSources(data.sources),
+      updatedAt: generated?.at ?? timestamp,
       body,
       outLinks: [],
       steps: Array.isArray(data.steps) ? data.steps.map(String) : undefined,

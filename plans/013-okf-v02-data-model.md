@@ -1,6 +1,6 @@
 # 013 — Carry OKF v0.2 provenance, trust, and lifecycle fields in `@okf/core`
 
-- **Status**: TODO
+- **Status**: DONE
 - **Commit**: 4ae3ca5 (all excerpts verified against the tree)
 - **Severity**: HIGH (the reader silently discards every v0.2 signal)
 - **Category**: Data model / spec conformance
