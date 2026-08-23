@@ -68,14 +68,15 @@ source; Node/Next resolve the built `dist/` output.
 - No linter is configured yet (no ESLint/Biome config in the repo) — match
   surrounding style.
 - `example-bundle/` is the default demo: the GA4 e-commerce bundle from
-  GoogleCloudPlatform/knowledge-catalog (Copyright Google LLC, Apache 2.0),
+  GoogleCloudPlatform/open-knowledge-format (Copyright Google LLC, Apache 2.0;
+  OKF moved out of GoogleCloudPlatform/knowledge-catalog in August 2026),
   with two deliberate local changes — `tours/` is ours (tours are a reader
   extension, not OKF), and its frontmatter was migrated to OKF v0.2 in place
   (plan 017). Don't edit it to make tests pass. Don't re-vendor it from
   upstream either: upstream rewrote its GA4 bundle during its own v0.2
   migration, so re-vendoring deletes the tour and swaps every metric.
 - `example-bundle-acme-retail/` is upstream's Acme Retail bundle, vendored
-  byte-identical at commit `3fcbb9f` — keep it that way. It exists because it
+  byte-identical at commit `ad30107` — keep it that way. It exists because it
   carries `verified`, `stale_after`, `status: deprecated`, and Attested
   Computations, which the GA4 bundle cannot demonstrate without fabricating
   them. Not the default demo; not used by tests or screenshots.

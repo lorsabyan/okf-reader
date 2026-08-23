@@ -884,7 +884,7 @@ export default function OpenViewer() {
           </CardHeader>
           <CardContent className="flex gap-2">
             <Input
-              placeholder="e.g. GoogleCloudPlatform/knowledge-catalog/tree/main/okf/bundles/ga4"
+              placeholder="e.g. GoogleCloudPlatform/open-knowledge-format/tree/main/bundles/ga4"
               value={repoUrl}
               onChange={(e) => setRepoUrl(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && openGithub()}

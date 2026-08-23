@@ -79,7 +79,7 @@ export interface Concept {
   verified: Actor[];
   /** v0.2 §5.4. Absent frontmatter ⇒ 'stable'. */
   status: ConceptStatus;
-  /** v0.2 §5.5: `YYYY-MM-DD`; the concept is stale on and after this day. */
+  /** v0.2 §5.5: an ISO 8601 timestamp; the concept is stale on and after it. */
   staleAfter?: string;
   /** v0.2 §5.1: the materials this concept derives from. */
   sources: Source[];

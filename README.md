@@ -1,6 +1,6 @@
 # okf-reader
 
-A static-first reading app for [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/3fcbb9f/okf/SPEC.md)
+A static-first reading app for [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/ad30107/SPEC.md)
 knowledge bundles — built for humans, not just agents. Point it at a bundle
 directory and it renders a browsable site: sidebar navigation, concept pages
 with frontmatter badges, rewired cross-links, backlinks ("cited by"), and a
@@ -89,7 +89,7 @@ exactly as OKF intends.
 ## Example bundle
 
 `example-bundle/` is the GA4 e-commerce bundle from
-[GoogleCloudPlatform/knowledge-catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog)
+[GoogleCloudPlatform/open-knowledge-format](https://github.com/GoogleCloudPlatform/open-knowledge-format)
 (Copyright Google LLC, Apache 2.0), vendored for the out-of-the-box demo, with
 two deliberate local changes:
 
@@ -112,7 +112,7 @@ what v0.2 added `generated` to fix.
 
 `example-bundle-acme-retail/` is upstream's Acme Retail bundle, vendored
 **byte-identical** at commit
-[`3fcbb9f`](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/3fcbb9f/okf/bundles/acme_retail)
+[`ad30107`](https://github.com/GoogleCloudPlatform/open-knowledge-format/tree/ad30107/bundles/acme_retail)
 (Copyright Google LLC, Apache 2.0), minus its `viz.html`.
 
 The GA4 bundle cannot demonstrate OKF v0.2's trust and lifecycle features,
