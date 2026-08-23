@@ -19,6 +19,23 @@ decisions taken.
 
 ## [Unreleased]
 
+### Changed
+
+- **Followed OKF to its own repository.** The spec link, the vendoring
+  attribution, and `plans/README.md`'s verification recipe now point at
+  [`%s`](https://github.com/%s)
+  at [`ad30107`](https://github.com/%s/blob/ad30107/SPEC.md); the
+  `okf/` copy in `GoogleCloudPlatform/knowledge-catalog` is a frozen snapshot.
+- **Re-vendored `example-bundle-acme-retail/`** byte-identical at `ad30107`.
+  Upstream rewrote its timestamps as ISO 8601 datetimes and added an Apache
+  header to `attesters/sql_equality.py`.
+- The GitHub-URL placeholder in the Open dialog points at the live repository
+  rather than the frozen `okf/` path.
+
+`staleSince()` and the validator's timestamp check already handled datetimes —
+both read a leading `YYYY-MM-DD` — so no behaviour changed; only the doc comments
+that promised a bare date did.
+
 ## [0.3.0] — 2026-07-30
 
 `@lorsabyan/okf-core` only. Settles the 0.x surface while the package still has

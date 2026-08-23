@@ -32,7 +32,7 @@ export interface Source {
   author?: string;
   /** How often the source was exercised over the bundle's usage window. */
   usageCount?: number;
-  /** `YYYY-MM-DD`. When the source itself last changed — distinct from `generated.at`. */
+  /** An ISO 8601 timestamp. When the source itself last changed — distinct from `generated.at`. */
   lastModified?: string;
 }
 

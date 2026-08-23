@@ -61,9 +61,9 @@ publishing it, while it still had zero installs and breaking changes were free.
 Verify against a real v0.2 bundle throughout, not just `example-bundle/` — it stays v0.1 until 017:
 
 ```sh
-git clone https://github.com/GoogleCloudPlatform/knowledge-catalog /tmp/kc
-git -C /tmp/kc checkout 3fcbb9f
-OKF_BUNDLE=/tmp/kc/okf/bundles/acme_retail bun run dev   # the only bundle with Attested Computations
+git clone https://github.com/GoogleCloudPlatform/open-knowledge-format /tmp/okf
+git -C /tmp/okf checkout ad30107
+OKF_BUNDLE=/tmp/okf/bundles/acme_retail bun run dev   # the only bundle with Attested Computations
 ```
 
 ## Considered and rejected / deferred (batch 2)

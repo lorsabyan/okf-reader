@@ -11,7 +11,8 @@ import { analyzeBundle } from './health.ts';
  * (okf/scripts/validate_okf.py in lorsabyan/okf-skill):
  *   - missing or unparseable YAML frontmatter -> error
  *   - missing/empty `type` field -> error
- *   - timestamp present but not ISO-8601-shaped (`YYYY-MM-DD...`) -> warning
+ *   - timestamp present but not ISO-8601-shaped (`YYYY-MM-DD` optionally
+ *     followed by a time; §5 asks for the full datetime since ad30107) -> warning
  *   - everything else analyzeBundle finds (broken links, missing
  *     descriptions, untyped, stale, undated, orphans) -> warnings
  *
