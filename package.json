@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@lorsabyan/okf-core": "workspace:*",
-    "@shikijs/rehype": "4.3.1",
+    "@shikijs/rehype": "4.4.3",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "cmdk": "1.1.1",
